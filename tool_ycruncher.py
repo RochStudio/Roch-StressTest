@@ -1,8 +1,13 @@
 """y-cruncher's component stress tester.
 
 The best-behaved tool of the set: a real command line, a real time limit, and
-it prints to stdout, so the runner reads failures directly off the pipe rather
-than hunting for a log. The whole adapter is one argument list.
+a logfile: option that mirrors everything it prints. The whole adapter is one
+argument list.
+
+That logfile is what lets it run in a visible console. A child whose stdout is
+redirected leaves its own console blank, so a tool cannot be both piped and
+watchable -- but y-cruncher will write the same text to a file, which the
+runner tails instead. Nothing is lost by showing it.
 
 The algorithm names come straight from Command Lines.txt in the distribution.
 Naming any algorithm disables the rest, which is why "All algorithms" passes
@@ -41,8 +46,10 @@ class YCruncher(Tool):
     exe_globs = ("y-cruncher*/y-cruncher.exe", "y-cruncher.exe")
     console = True
     detection_note = (
-        "Output is read live from the process, so a failed comparison stops "
-        "the run within a second of y-cruncher printing it."
+        "Shown in its own window, failures are read from y-cruncher's log "
+        "file, which carries the same text it prints; hidden, they are read "
+        "straight off the process. Either way a failed comparison stops the "
+        "run within a couple of seconds of y-cruncher printing it."
     )
 
     fields = (
@@ -55,10 +62,14 @@ class YCruncher(Tool):
               maximum=86400, unit="s",
               hint="How long each algorithm runs before the next. 0 omits -D "
                    "and leaves y-cruncher's own default."),
+        Field("show_window", "Show y-cruncher's window", "bool", True,
+              hint="Runs it in its own console so you can watch it. Failures "
+                   "are then read from its log file, which carries exactly "
+                   "the same text."),
         Field("pause", "Pause at the end", "bool", False,
-              hint="y-cruncher's pause:1. It makes no difference here: the "
-                   "console is hidden and its input is closed, so the prompt "
-                   "is printed to the log and the process exits anyway."),
+              hint="y-cruncher's pause:1. It leaves the finished result on "
+                   "screen if the window is shown, and changes nothing if it "
+                   "is not -- either way the process still exits."),
         Field("duration", "Stop after", "int", 60, minimum=0, maximum=100000,
               unit="min",
               hint="Passed to y-cruncher as -TL. 0 runs until you press Stop."),
@@ -194,15 +205,18 @@ class YCruncher(Tool):
         except OSError:
             pass
 
+        # Shown in its own console, or piped and hidden -- never both. A
+        # child whose stdout is redirected leaves its console blank, so the
+        # visible case is watched through the log file instead. That file
+        # carries the same text, which is exactly why watching both at once
+        # used to print every line twice.
+        show = bool(config.get("show_window", True))
+
         return LaunchSpec(
             argv=argv,
             cwd=os.path.dirname(exe),
-            console=True,
-            # The log file is written for the user to open afterwards, but it
-            # is deliberately not watched: y-cruncher puts the same text on
-            # stdout, which is already being read, so watching both printed
-            # every line of the run twice.
-            watch_files=[],
+            console=not show,
+            watch_files=[logfile] if show else [],
             error_key=self.key,
             summary=(
                 f"y-cruncher {' '.join(selected) if selected else 'all tests'}"
@@ -211,5 +225,6 @@ class YCruncher(Tool):
                    else ", default test length")
             ),
             duration_seconds=duration_seconds,
-            creation_flags=self._no_window_flags(),
+            creation_flags=(self._new_console_flags() if show
+                            else self._no_window_flags()),
         )

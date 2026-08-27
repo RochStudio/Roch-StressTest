@@ -67,6 +67,8 @@ The point of the program. What each tab claims is what it does:
 - **TestMem5** is read from `Log.txt`, which 0.13.1 appends beside `TM5.exe`. `Error in test #N`, a non-zero error total, and a crash blamed on the tested memory all stop the run. TM5's *own* failures — memory it could not allocate or lock — are deliberately not reported as instability, because TM5 says outright that they are not.
 - **RAM Test Pro** reports only in its own window and writes no log. A crash or early exit is caught; the on-screen counter cannot be. Leave that window visible.
 
+Every tool runs in its own visible window. The three that are windowed do that by themselves; the two console ones are given a console, which is why neither is piped: a child whose stdout is redirected leaves its own console blank. y-cruncher is watched through its `logfile:` instead, and Linpack — which has no log option, and whose pass/fail column exists nowhere but its output — is teed with PowerShell's `Tee-Object`. That writes UTF-16, so the log reader detects encoding from the byte-order mark. Turn the window off per tool with "Show ...'s window" and it goes back to a hidden console read straight off the pipe.
+
 A failure kills the process tree, stops the queue, beeps, switches to the Log tab, and writes a transcript to `%LOCALAPPDATA%\RochStressTest\logs\FAILED-<timestamp>.txt` — because the run that matters is the one that failed at 4am.
 
 ## The queue

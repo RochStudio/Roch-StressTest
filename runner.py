@@ -60,6 +60,34 @@ class _FileTail:
     def __init__(self, path):
         self.path = path
         self.offset = os.path.getsize(path) if os.path.isfile(path) else 0
+        # Decided from the byte-order mark on the first read. Not every log
+        # here is UTF-8: TM5 writes UTF-8 with a BOM, and PowerShell's
+        # Tee-Object -- which is how Linpack's output is captured while
+        # staying visible in its own console -- writes UTF-16LE. Read as
+        # UTF-8, a UTF-16 log decodes to text with a NUL between every
+        # character, and not one pattern in errors.py matches it.
+        self.encoding = None
+        # A byte held back because a two-byte character straddled the end of
+        # a read. Without this, one unlucky poll corrupts a line.
+        self._pending = b""
+
+    @staticmethod
+    def _sniff(chunk):
+        if chunk.startswith(b"\xff\xfe"):
+            return "utf-16-le"
+        if chunk.startswith(b"\xfe\xff"):
+            return "utf-16-be"
+        # No mark, but every second byte is a NUL: UTF-16 written without a
+        # BOM. The test is deliberately strict -- a NUL at every odd position
+        # across the first 32 bytes -- because guessing this one wrong would
+        # garble an ordinary log, and a garbled log is a run whose failures
+        # match nothing and are reported as a pass.
+        head = chunk[:32]
+        if len(head) >= 16 and all(byte == 0 for byte in head[1::2]):
+            return "utf-16-le"
+        if len(head) >= 16 and all(byte == 0 for byte in head[0::2]):
+            return "utf-16-be"
+        return "utf-8"
 
     def read_new(self):
         try:
@@ -67,14 +95,26 @@ class _FileTail:
                 return ""
             size = os.path.getsize(self.path)
             if size < self.offset:
+                # Rotated or rewritten: start again, and re-sniff, because it
+                # may not be the same kind of file any more.
                 self.offset = 0
+                self.encoding = None
+                self._pending = b""
             if size == self.offset:
                 return ""
             with open(self.path, "rb") as handle:
                 handle.seek(self.offset)
                 chunk = handle.read()
             self.offset += len(chunk)
-            return chunk.decode("utf-8", errors="replace")
+
+            data = self._pending + chunk
+            self._pending = b""
+            if self.encoding is None:
+                self.encoding = self._sniff(data)
+            if self.encoding.startswith("utf-16") and len(data) % 2:
+                self._pending = data[-1:]
+                data = data[:-1]
+            return data.decode(self.encoding, errors="replace").lstrip("﻿")
         except OSError:
             return ""
 

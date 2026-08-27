@@ -636,7 +636,9 @@ class StressApp:
         self.log("")
         self.log("=== " + label + " ===")
         self.log(spec.summary)
-        self.log("Command: " + " ".join(spec.argv))
+        # The raw command line when there is one, because for the two tools
+        # that use it the argument list is not what actually gets run.
+        self.log("Command: " + (spec.cmdline or " ".join(spec.argv)))
         if spec.duration_seconds:
             self.log("Time limit: " + format_duration(spec.duration_seconds))
         else:

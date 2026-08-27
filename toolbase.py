@@ -258,6 +258,18 @@ class Tool:
         return path
 
     @staticmethod
+    def _new_console_flags():
+        """Give a console child its own visible window.
+
+        The windowed tools put themselves on screen; the two console ones
+        would otherwise run entirely unseen. Output cannot be piped at the
+        same time -- a redirected child writes to the pipe and its console
+        stays blank -- so a tool shown this way is watched through a file
+        instead, and each adapter arranges one.
+        """
+        return getattr(subprocess, "CREATE_NEW_CONSOLE", 0x00000010)
+
+    @staticmethod
     def _no_window_flags():
         """Start a console child without flashing a console window.
 

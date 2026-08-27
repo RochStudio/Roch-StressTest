@@ -98,6 +98,10 @@ class Linpack(Tool):
                    "error even when the check column still says pass."),
         Field("duration", "Stop after", "int", 30, minimum=0, maximum=100000,
               unit="min", hint="0 runs until you press Stop."),
+        Field("show_window", "Show Linpack's window", "bool", True,
+              hint="Runs it in its own console so you can watch the GFlops "
+                   "table fill in. Its output is copied to a file at the "
+                   "same time, so nothing stops being checked."),
         Field("affinity", "KMP_AFFINITY", "text",
               "nowarnings,compact,1,0,granularity=fine",
               hint="Blank leaves the library to place threads itself."),
@@ -207,13 +211,37 @@ class Linpack(Tool):
         else:
             env.pop("KMP_AFFINITY", None)
 
+        # Linpack has no log option, so showing its console means teeing its
+        # output: a redirected child leaves its own window blank, and the
+        # pass/fail column exists nowhere but that output. PowerShell is the
+        # only tee Windows ships. It writes UTF-16, which the runner's tail
+        # reader detects from the byte-order mark.
+        #
+        # Paths are single-quoted for PowerShell, which is what carries the
+        # spaces in "Roch StressTest" through intact.
+        show = bool(config.get("show_window", True))
+        tee_path = os.path.join(work, "linpack-output.txt")
+        cmdline = None
+        if show:
+            try:
+                if os.path.exists(tee_path):
+                    os.remove(tee_path)
+            except OSError:
+                pass
+            cmdline = (
+                "powershell -NoProfile -ExecutionPolicy Bypass -Command "
+                "\"& '" + exe + "' '" + input_path + "' | "
+                "Tee-Object -FilePath '" + tee_path + "'\""
+            )
+
         memory_gb = 8.0 * lda * size / (1024 ** 3)
         return LaunchSpec(
             argv=[exe, input_path],
+            cmdline=cmdline,
             cwd=folder,
             env=env,
-            console=True,
-            watch_files=[],
+            console=not show,
+            watch_files=[tee_path] if show else [],
             error_key=self.key,
             summary=(
                 "Linpack " + os.path.basename(exe)
@@ -221,5 +249,6 @@ class Linpack(Tool):
                 + ", {:.1f} GB, ".format(memory_gb) + str(threads) + " threads"
             ),
             duration_seconds=int(config.get("duration", 0)) * 60,
-            creation_flags=self._no_window_flags(),
+            creation_flags=(self._new_console_flags() if show
+                            else self._no_window_flags()),
         )
