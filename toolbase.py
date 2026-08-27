@@ -102,7 +102,15 @@ class LaunchSpec:
         cmdline=None,
         completion_patterns=(),
         abort_patterns=(),
+        leave_open=False,
     ):
+        # Leave the tool on screen once it has finished by itself, instead of
+        # killing it the moment the verdict is known. This is the whole point
+        # of y-cruncher's pause:1 -- it holds its window open showing the
+        # result -- and killing the process is what made that option look
+        # broken. Only applies to a run that ended on its own terms: a time
+        # limit or a stop still has to actually stop it.
+        self.leave_open = leave_open
         # Lines that mean the tool has finished its work, and lines that mean
         # it stopped without finishing. Needed for any tool that does not exit
         # when it is done: TestMem5 finishes its cycles, writes "Testing

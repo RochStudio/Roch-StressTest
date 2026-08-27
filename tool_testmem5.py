@@ -271,6 +271,10 @@ class TestMem5(Tool):
             # reported at all.
             completion_patterns=errors.TESTMEM5_COMPLETE,
             abort_patterns=errors.TESTMEM5_ABORTED,
+            # TM5 leaves its window up when it finishes, showing the cycle
+            # count and the error total. Killing it the moment the log said
+            # "Testing completed" threw away the one summary TM5 gives you.
+            leave_open=True,
         )
 
     def presets_for(self, root):

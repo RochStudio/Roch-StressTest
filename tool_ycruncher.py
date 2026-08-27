@@ -36,6 +36,14 @@ ALGORITHMS = (
 )
 
 
+# How much longer than its own -TL y-cruncher is given before the runner
+# steps in. It needs to be more than none: -TL is only checked between tests,
+# so y-cruncher routinely runs past its limit to finish the test in progress,
+# and a backstop that fired on the dot would kill it mid-test every time --
+# taking the window, and the result printed in it, with it.
+BACKSTOP_GRACE_SECONDS = 300
+
+
 class YCruncher(Tool):
     key = "ycruncher"
     name = "y-cruncher"
@@ -73,7 +81,11 @@ class YCruncher(Tool):
                    "is not -- either way the process still exits."),
         Field("duration", "Stop after", "int", 60, minimum=0, maximum=100000,
               unit="min",
-              hint="Passed to y-cruncher as -TL. 0 runs until you press Stop."),
+              hint="Passed to y-cruncher as -TL, which it checks between "
+                   "tests -- so it stops at the first test boundary at or "
+                   "after this, not on the dot. The countdown shown while it "
+                   "runs allows five minutes past it before stepping in. "
+                   "0 runs until you press Stop."),
         Field("priority", "Process priority", "choice", "Normal",
               choices=["Below normal", "Normal", "Above normal", "High"],
               hint="y-cruncher defaults to below normal, which shares the "
@@ -225,9 +237,16 @@ class YCruncher(Tool):
                 + (f", {per_test}s per test" if per_test > 0
                    else ", default test length")
             ),
-            duration_seconds=duration_seconds,
+            # The backstop, not the limit. -TL above is what actually ends
+            # the run; this only matters if y-cruncher never gets there.
+            duration_seconds=(duration_seconds + BACKSTOP_GRACE_SECONDS
+                              if duration_seconds else 0),
             creation_flags=(self._new_console_flags() if show
                             else self._no_window_flags()),
+            # pause:1 holds the window open at the end -- verified, it sits
+            # there indefinitely. That is only visible to anyone if the run
+            # does not then kill it.
+            leave_open=bool(show and config.get("pause")),
             # A clean exit without this line means the run ended early --
             # the window was closed, or the console was interrupted -- which
             # is not the same as passing.

@@ -431,7 +431,25 @@ class Runner:
 
         with self._lock:
             process = self._process
-        kill_tree(process)
+
+        # A tool that finished on its own and was asked to stay on screen is
+        # left alone. It is not testing anything any more -- it is sitting at
+        # its own "press any key" prompt with the result showing, which is
+        # exactly what the user asked for by turning that option on. Anything
+        # else is still running and has to be stopped.
+        left_open = (
+            spec.leave_open
+            and outcome == PASSED
+            and saw_completion
+            and process is not None
+            and process.poll() is None
+        )
+        if left_open:
+            note += (" Its window has been left open; close it when you have "
+                     "read the result.")
+        else:
+            kill_tree(process)
+
         self.finding = note if outcome == FAILED else ""
         self._set_state(outcome or STOPPED, note)
 
