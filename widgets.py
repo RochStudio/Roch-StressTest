@@ -52,7 +52,7 @@ def label(parent, text, row, column=0, bold=False, colour=None, **grid):
     return widget
 
 
-def hint(parent, text, row, column=1, span=2):
+def hint(parent, text, row, column=1, span=2, wrap=520):
     """Grey explanatory text under a field.
 
     Wrapped rather than truncated: these say why a setting exists, and half a
@@ -65,7 +65,7 @@ def hint(parent, text, row, column=1, span=2):
         text_color=theme.SUBTITLE_COLOR,
         anchor="w",
         justify="left",
-        wraplength=520,
+        wraplength=wrap,
     )
     widget.grid(row=row, column=column, columnspan=span, sticky="w",
                 pady=(0, 4))

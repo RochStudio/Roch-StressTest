@@ -41,6 +41,14 @@ Administrator rights are asked for once at launch. TestMem5 and RAM Test Pro nee
 
 Memory figures are computed from what is actually free when you pick a preset, not from a constant. Linpack's problem size and leading dimension are derived from the memory box using Intel's own rule — the nearest odd multiple of 16 at or above the problem size on AVX parts.
 
+## Memory cleaner
+
+The toolbar carries a live `RAM x / y GB free` readout and a **Clean memory** button, because a memory test only tests the memory it can actually get. Windows counts its standby list — pages it has finished with but is holding in case they are wanted again — as used, so on a machine that has been up a while, asking for 28 GB quietly takes part of it from the page file and the run measures an SSD rather than the DIMMs.
+
+Cleaning empties every process's working set, then purges the standby and low-priority standby lists, through `NtSetSystemInformation` with `SystemMemoryListInformation`. That needs `SeProfileSingleProcessPrivilege`, which an administrator has but which is *not* enabled in the token until it is asked for. It is implemented in `memory.py` rather than bundling a third-party binary; the approach was checked against danskee's Memory Cleaner, whose DLL exports one `CleanMemory` and imports exactly those three calls.
+
+Nothing about it is destructive: the purged pages are cached copies of data already on disk, re-read if wanted again.
+
 ## Defaults
 
 What each tool runs from Quick Start, and what its own tab opens on:

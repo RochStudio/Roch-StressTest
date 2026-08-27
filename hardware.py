@@ -159,3 +159,12 @@ def describe():
         f"{cpu_name()} -- {physical_cores()}C/{logical_cores()}T, "
         f"{total_ram_mb() / 1024:.1f} GB RAM"
     )
+
+
+def describe_cpu():
+    """The same line without the memory size.
+
+    For the toolbar, which shows memory live a few pixels to the right and
+    does not need to say 31.3 GB twice.
+    """
+    return f"{cpu_name()} -- {physical_cores()}C/{logical_cores()}T"

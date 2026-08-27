@@ -23,6 +23,7 @@ import queue as queue_module
 import customtkinter as ctk
 
 import hardware
+import memory as memory_module
 import runner as runner_module
 import settings
 import theme
@@ -37,6 +38,9 @@ PUMP_MS = 120
 # The log keeps this many lines. A twelve-hour Linpack run produces far more
 # than a text widget can redraw, and only the tail is ever read.
 LOG_LIMIT = 4000
+
+# How often the live memory readout is refreshed.
+RAM_MS = 1000
 
 STATE_COLOURS = {
     runner_module.IDLE: theme.IDLE_COLOR,
@@ -292,6 +296,7 @@ class StressApp:
         self.report_missing()
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.root.after(PUMP_MS, self._pump_events)
+        self._update_ram()
 
     # -- chrome ----------------------------------------------------------
 
@@ -321,12 +326,12 @@ class StressApp:
     def setup_window_geometry(self):
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
-        width = min(880, max(760, screen_width - 80))
+        width = min(1020, max(880, screen_width - 80))
         height = min(880, max(640, screen_height - 120))
         x = max(0, (screen_width - width) // 2)
         y = max(0, (screen_height - height) // 2)
         self.root.geometry("{}x{}+{}+{}".format(width, height, x, y))
-        self.root.minsize(760, 620)
+        self.root.minsize(880, 620)
 
     def create_widgets(self):
         self.main_frame = ctk.CTkFrame(
@@ -349,7 +354,7 @@ class StressApp:
         ).pack(side="left", padx=(10, 6), pady=3)
 
         ctk.CTkLabel(
-            bar, text=hardware.describe(), font=theme.COMPACT_FONT,
+            bar, text=hardware.describe_cpu(), font=theme.COMPACT_FONT,
             text_color=theme.SUBTITLE_COLOR, anchor="w",
         ).pack(side="left", padx=(4, 0), pady=3)
 
@@ -370,6 +375,21 @@ class StressApp:
         widgets.action_button(
             bar, "Open logs", self.open_logs, width=90
         ).pack(side="right", padx=(4, 0), pady=3)
+
+        # Memory, live, next to the button that frees it. A stress test only
+        # tests the memory it can actually get: Windows counts the standby
+        # list as used, so on a machine that has been up a while, asking for
+        # 28 GB quietly gets part of it from the page file instead.
+        self.clean_button = widgets.action_button(
+            bar, "Clean memory", self.clean_memory, width=120
+        )
+        self.clean_button.pack(side="right", padx=(4, 0), pady=3)
+
+        self.ram_label = ctk.CTkLabel(
+            bar, text="", font=theme.STATUS_FONT,
+            text_color=theme.TEXT_COLOR, anchor="e",
+        )
+        self.ram_label.pack(side="right", padx=(8, 6), pady=3)
 
     def _build_tabs(self):
         self.tabview = ctk.CTkTabview(
@@ -443,11 +463,30 @@ class StressApp:
                   "tool's own tab opens on the same settings, so change them "
                   "there if you want something else."),
             font=theme.COMPACT_FONT, text_color=theme.SUBTITLE_COLOR,
-            anchor="w", justify="left", wraplength=680,
+            anchor="w", justify="left", wraplength=900,
         ).pack(fill="x", padx=12, pady=(10, 8))
 
-        for tool in toolset.TOOLS:
-            self._build_quick_card(frame, tool)
+        # Two columns of cards rather than one tall list, so all five tools
+        # are on screen at once and Quick Start needs no scrolling to use.
+        # The cards themselves still pack vertically -- each column is its
+        # own frame -- which keeps the section widget unchanged.
+        columns = ctk.CTkFrame(frame, fg_color="transparent")
+        columns.pack(fill="both", expand=True)
+        columns.grid_columnconfigure(0, weight=1, uniform="quick")
+        columns.grid_columnconfigure(1, weight=1, uniform="quick")
+
+        sides = []
+        for index in range(2):
+            side = ctk.CTkFrame(columns, fg_color="transparent")
+            side.grid(row=0, column=index, sticky="new")
+            sides.append(side)
+
+        # Down the left column first, then the right, so reading order
+        # matches the tab order rather than zig-zagging across the page.
+        tools = list(toolset.TOOLS)
+        split = (len(tools) + 1) // 2
+        for position, tool in enumerate(tools):
+            self._build_quick_card(sides[0 if position < split else 1], tool)
 
     def _build_quick_card(self, parent, tool):
         available = tool.available(self.root_path)
@@ -459,12 +498,12 @@ class StressApp:
                   else "Not found -- see the " + tool.name + " tab."),
             font=theme.COMPACT_BOLD,
             text_color=theme.TEXT_COLOR if available else theme.FAIL_COLOR,
-            anchor="w", justify="left",
+            anchor="w", justify="left", wraplength=400,
         ).grid(row=0, column=0, columnspan=2, sticky="w")
 
         note = tool.quick_note() if available else ""
         if note:
-            widgets.hint(body, note, 1, column=0, span=2)
+            widgets.hint(body, note, 1, column=0, span=2, wrap=380)
 
         buttons = ctk.CTkFrame(body, fg_color="transparent")
         buttons.grid(row=2, column=0, sticky="w", pady=(4, 0))
@@ -575,6 +614,51 @@ class StressApp:
             text_color=theme.TEXT_COLOR, anchor="e",
         )
         self.clock_label.pack(side="right", padx=(4, 8), pady=4)
+
+    # -- memory ----------------------------------------------------------
+
+    def _update_ram(self):
+        """Refresh the live memory readout once a second.
+
+        Separate from the event pump, which runs eight times a second: the
+        figure does not move that fast and there is no reason to redraw it
+        that often.
+        """
+        try:
+            available, total, used = memory_module.reading()
+            self.ram_label.configure(
+                text="RAM {:.1f} / {:.1f} GB free".format(
+                    available / 1024.0, total / 1024.0),
+                # Red once memory is nearly gone, which during a 28 GB run is
+                # the normal state and worth being able to see at a glance.
+                text_color=(theme.FAIL_COLOR if used >= 90
+                            else theme.WARN_COLOR if used >= 75
+                            else theme.TEXT_COLOR),
+            )
+        finally:
+            self.root.after(RAM_MS, self._update_ram)
+
+    def clean_memory(self):
+        """Empty working sets and purge the standby lists, and say what happened."""
+        self.clean_button.configure(state="disabled", text="Cleaning...")
+        self.root.update_idletasks()
+        try:
+            result = memory_module.clean()
+        except Exception as error:
+            self.log("Could not clean memory: " + str(error))
+        else:
+            self.log(result.describe())
+            if result.failed and not result.done:
+                self.log("  Memory cleaning needs administrator rights, "
+                         "which this program normally asks for at launch.")
+        finally:
+            self.clean_button.configure(state="normal", text="Clean memory")
+            self._update_ram_now()
+
+    def _update_ram_now(self):
+        available, total, _used = memory_module.reading()
+        self.ram_label.configure(text="RAM {:.1f} / {:.1f} GB free".format(
+            available / 1024.0, total / 1024.0))
 
     # -- log -------------------------------------------------------------
 
