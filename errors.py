@@ -126,6 +126,14 @@ TESTMEM5_ABORTED = [
 ]
 
 
+# y-cruncher's last line when a stress run ends of its own accord. Without it
+# a run that ended early -- its window closed, its console interrupted --
+# exits cleanly and is indistinguishable from one that ran to the end.
+YCRUNCHER_COMPLETE = [
+    r"Test Finished",
+]
+
+
 def _compile(patterns):
     return [re.compile(p, re.IGNORECASE) for p in patterns + _COMMON]
 

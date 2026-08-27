@@ -31,6 +31,13 @@ FAILED = "failed"
 STOPPED = "stopped"
 BROKEN = "broken"
 
+# 0xC000013A. Windows gives a console process this exit code when it is sent
+# Ctrl+C or Ctrl+Break, or when its console window is closed. It says nothing
+# about the health of the machine, so it must never be reported as a failure:
+# a stress tester that cries hardware fault when somebody shut a window is
+# worse than one that says nothing at all.
+STATUS_CONTROL_C_EXIT = 0xC000013A
+
 # How often the watcher wakes to poll log files and check the clock. Two
 # seconds is far below any useful test duration and keeps the thread asleep
 # almost all the time.
@@ -248,6 +255,7 @@ class Runner:
         # its output, because waiting on the process would wait for ever.
         finished = errors.compile_plain(spec.completion_patterns)
         aborted = errors.compile_plain(spec.abort_patterns)
+        saw_completion = False
 
         reader = None
         pipe_lines = queue.Queue()
@@ -325,6 +333,7 @@ class Runner:
                 if finished and errors.matches(stripped, finished):
                     outcome, note = PASSED, (
                         "The tool reported it had finished: " + stripped)
+                    saw_completion = True
                     break
                 if aborted and errors.matches(stripped, aborted):
                     outcome, note = STOPPED, (
@@ -340,28 +349,69 @@ class Runner:
 
             code = self._process.poll()
             if code is not None:
-                # Give the reader a moment to hand over the tail of the pipe
-                # before deciding what the exit meant.
+                # The last thing a tool writes is usually the thing worth
+                # reading: its verdict. Drain the pipe, and re-read the log
+                # files, before deciding what the exit meant -- a completion
+                # line written a moment before exit used to be missed
+                # entirely, and the exit judged on the code alone.
+                leftovers = []
                 if reader is not None:
                     reader.join(timeout=3)
                     while True:
                         try:
-                            leftover = pipe_lines.get_nowait().rstrip()
+                            leftovers.append(pipe_lines.get_nowait())
                         except queue.Empty:
                             break
-                        if leftover:
-                            self._emit("output", line=leftover)
-                            hit = errors.scan(leftover, spec.error_key)
-                            if hit:
-                                outcome, note = FAILED, hit
+                for tail in tails:
+                    text = tail.read_new()
+                    if text:
+                        leftovers.extend(text.splitlines())
+
+                for line in leftovers:
+                    stripped = line.rstrip()
+                    if not stripped:
+                        continue
+                    self._emit("output", line=stripped)
+                    if outcome:
+                        continue
+                    hit = errors.scan(stripped, spec.error_key)
+                    if hit:
+                        outcome, note = FAILED, hit
+                    elif finished and errors.matches(stripped, finished):
+                        outcome, note = PASSED, (
+                            "The tool reported it had finished: " + stripped)
+                        saw_completion = True
+                    elif aborted and errors.matches(stripped, aborted):
+                        outcome, note = STOPPED, (
+                            "The tool stopped before finishing: " + stripped)
+
                 if outcome:
                     break
-                if code == 0:
-                    outcome, note = PASSED, "Finished on its own with no errors."
-                else:
+
+                if code == STATUS_CONTROL_C_EXIT:
+                    # Its console was closed, or it was sent Ctrl+C or
+                    # Ctrl+Break. That is somebody or something interrupting
+                    # the test, not memory or a core giving a wrong answer,
+                    # and calling it a failure would have people chasing an
+                    # instability that was never there.
+                    outcome, note = STOPPED, (
+                        "The tool's console was closed or interrupted "
+                        "(Ctrl+C). This is not a hardware failure, and the "
+                        "test did not finish.")
+                elif code != 0:
                     outcome, note = FAILED, (
                         "The tool exited with code " + str(code)
                         + ", which usually means it crashed.")
+                elif finished and not saw_completion:
+                    # A clean exit from a tool that announces its own
+                    # completion, without that announcement. Closing the
+                    # window does this, and it is not a pass: nothing ran to
+                    # the end.
+                    outcome, note = STOPPED, (
+                        "The tool exited without reporting that it had "
+                        "finished, so the test did not run to the end.")
+                else:
+                    outcome, note = PASSED, "Finished on its own with no errors."
                 break
 
             now = time.time()

@@ -69,6 +69,8 @@ The point of the program. What each tab claims is what it does:
 
 Every tool runs in its own visible window. The three that are windowed do that by themselves; the two console ones are given a console, which is why neither is piped: a child whose stdout is redirected leaves its own console blank. y-cruncher is watched through its `logfile:` instead, and Linpack — which has no log option, and whose pass/fail column exists nowhere but its output — is teed with PowerShell's `Tee-Object`. That writes UTF-16, so the log reader detects encoding from the byte-order mark. Turn the window off per tool with "Show ...'s window" and it goes back to a hidden console read straight off the pipe.
 
+An exit is judged on what the tool said, not just on its exit code. Windows gives a console process exit code `0xC000013A` when it is sent Ctrl+C or its window is closed; that says nothing about the machine, so it is reported as stopped, never as a failure. A clean exit from a tool that announces its own completion, *without* that announcement, is also stopped rather than passed — closing a window mid-run is not a pass. A real failure still wins over both: the error line is checked first.
+
 A failure kills the process tree, stops the queue, beeps, switches to the Log tab, and writes a transcript to `%LOCALAPPDATA%\RochStressTest\logs\FAILED-<timestamp>.txt` — because the run that matters is the one that failed at 4am.
 
 ## The queue

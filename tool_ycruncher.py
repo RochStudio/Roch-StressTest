@@ -16,6 +16,7 @@ none at all rather than listing them.
 
 import os
 
+import errors
 import hardware
 import settings
 from toolbase import Field, LaunchSpec, Preset, Tool, ToolUnavailable
@@ -227,4 +228,8 @@ class YCruncher(Tool):
             duration_seconds=duration_seconds,
             creation_flags=(self._new_console_flags() if show
                             else self._no_window_flags()),
+            # A clean exit without this line means the run ended early --
+            # the window was closed, or the console was interrupted -- which
+            # is not the same as passing.
+            completion_patterns=errors.YCRUNCHER_COMPLETE,
         )
