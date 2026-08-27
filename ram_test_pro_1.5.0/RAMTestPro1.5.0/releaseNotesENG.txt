@@ -1,0 +1,30 @@
+RAM Test Pro 1.5.0 changelog.
+
+RAM Test:
+    - Administrator rights are no longer required to run the program (though still recommended);
+    - Added scrollbars to hardware information panels;
+    - Added support for multi-socket and single-socket NUMA systems (servers and workstations);
+    - Added support for Large Pages, relevant for server systems;
+    - Fixed memory size auto-detection for very small or very large RAM capacities;
+    - Optimized automatic memory allocation;
+    - Added red highlighting on error detection;
+    - Reduced the size of the RAM Test Pro.exe file (dependency optimization);
+    - Optimized test functions and new ones added (beta);
+    - Added window shadows;
+    - Fixed bug when restarting the program;
+    - Fixed crash when rebooting the PC;
+    - Fixed Windows version detection;
+    - Fixed detection of memory modules larger than 32 GB;
+    - Fixed error with config path;
+    - And other minor improvements.
+
+Benchmark:
+    - Benchmark now supports multi-socket and NUMA systems. You can select the socket to test, and NUMA nodes automatically selected;
+    - Added result filters for accurate repeated measurements;
+    - Benchmark window can now be switched back to the main testing window;
+    - Testing algorithms have been reworked and improved;
+    - Added automatic benchmark rerun with screenshot saving after each run;
+    - Improved screenshot quality;
+    - Fixed a rare memory allocation error;
+    - During long benchmark runs the screen will no longer turn off;
+    - And other minor improvements.

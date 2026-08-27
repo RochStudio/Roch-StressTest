@@ -1,0 +1,26 @@
+__pycache__/
+*.py[cod]
+build/
+dist/
+.venv/
+venv/
+.idea/
+.vscode/
+*.log
+*.tmp
+*.bak
+
+# Written by this program when it launches TestMem5: a copy of the profile
+# picked in the window, for TM5 to fall back on. Regenerated every run.
+TestMem5/bin/MT.cfg
+
+# Prime95 keeps its state in LOCALAPPDATA, but a stray run started by hand in
+# the distribution folder leaves these behind.
+p95*/prime.txt
+p95*/local.txt
+p95*/results.txt
+p95*/worktodo.txt
+
+# Linpack input files and any transcript captured while testing.
+lininput*
+*_dump.txt

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Linpack Info</title>
+    <style>
+      body {
+        padding: 0 20px;
+      }
+
+      h2 {
+        text-align: center;
+      }
+
+      th {
+        text-align: end;
+        padding-left: 50px;
+      }
+
+      td {
+        text-align: end;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h2>
+      Information on problem sizes, leading dimensions, alignment values and
+      processor types taken from Intel's documentation
+    </h2>
+    <p>
+      The number of equations must be positive, this value (with the couple of
+      the leading dimension value) is restricted only by the memory available.
+      The benchmark solves a real*8 system of linear equations; just to store
+      the matrix requires at least 8*(leading dimension)*(number of equations)
+      bytes. Each test or trial may have a different memory requirement, but the
+      program may exit if given a leading dimension and number of equations too
+      large. The leading dimension must be no less than the number of equations.
+      Experience has shown that the best performance for a given problem size is
+      obtained when the leading dimension is set to the nearest odd multiple of
+      8 (16 for Intel(R) AVX processors) equal to or larger than the number of
+      equations (divisible by 8 but not by 16, or divisible by 16 but not 32 for
+      Intel(R) AVX processors). The alignment value allows the arrays to be
+      aligned to the value specified, zero means that no specific alignment will
+      be performed - the arrays are used as they are allocated. The best
+      performance is likely to be obtained when arrays are aligned to the page
+      size boundary.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Memory (MB)</th>
+          <th>CPU with AVX?</th>
+          <th>Problem Size</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><input id="memory" type="number" value="12800" min="1" /></td>
+          <td><input id="avx" type="checkbox" checked /></td>
+          <td id="problem-size"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <script>
+      function isValid(problemSize, hasAvx) {
+        return (
+          (hasAvx &&
+            problemSize % 16 === 0 &&
+            (problemSize / 16) % 2 === 1 &&
+            problemSize % 32 !== 0) ||
+          (!hasAvx &&
+            problemSize % 8 === 0 &&
+            (problemSize / 8) % 2 === 1 &&
+            problemSize % 16 !== 0)
+        );
+      }
+
+      function calculateProblemSize() {
+        const initialProblemSize = Math.round(
+          Math.sqrt((memoryEl.value * 1000000) / 8)
+        );
+        let targetProblemSize;
+        let counter = 0;
+        const hasAvx = avxEl.checked;
+
+        if (isValid(initialProblemSize, hasAvx)) {
+          targetProblemSize = initialProblemSize;
+        }
+
+        while (!targetProblemSize) {
+          let tempProblemSize = initialProblemSize + counter;
+          if (isValid(tempProblemSize, hasAvx)) {
+            targetProblemSize = tempProblemSize;
+          }
+
+          tempProblemSize = initialProblemSize - counter;
+          if (isValid(tempProblemSize, hasAvx)) {
+            targetProblemSize = tempProblemSize;
+          }
+
+          counter++;
+        }
+
+        resultEl.textContent = targetProblemSize;
+      }
+
+      const memoryEl = document.getElementById("memory");
+      const avxEl = document.getElementById("avx");
+      const resultEl = document.getElementById("problem-size");
+
+      memoryEl.addEventListener("input", () => {
+        calculateProblemSize();
+      });
+      avxEl.addEventListener("change", () => {
+        calculateProblemSize();
+      });
+
+      calculateProblemSize();
+    </script>
+  </body>
+</html>

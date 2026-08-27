@@ -1,0 +1,16 @@
+# Our own source: normalised, so a clone on any machine gets the same file.
+*.py   text eol=lf
+*.md   text eol=lf
+*.spec text eol=lf
+*.bat  text eol=crlf
+
+# The vendored tool distributions are committed byte for byte. Prime95's and
+# TM5's configuration files are read by programs that were never asked to
+# cope with a line ending they did not ship with, and the y-cruncher formula
+# files are checksummed. Nothing in these folders is ours to normalise.
+Linpack-Extended-master/**   -text
+LinpackXtreme-1.1.7/**       -text
+TestMem5/**                  -text
+p95v3019b20.win64/**         -text
+ram_test_pro_1.5.0/**        -text
+y-cruncher*/**               -text
