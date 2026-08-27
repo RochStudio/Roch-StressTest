@@ -56,8 +56,23 @@ for tool in toolset.TOOLS:
     root.update_idletasks()
     quick = tool.quick_config(app.root_path)
     tab = panel.config()
+    # Values derived from free memory are recomputed each time they are
+    # asked for -- that is the point of them -- so the two reads land a
+    # fraction of a second and a megabyte or two apart. Compared exactly,
+    # this test fails roughly one run in six for a difference that means
+    # nothing. Everything else must match to the value.
+    derived = {"memory", "problem_size", "leading_dimension"}         if hasattr(tool, "suggested_memory") or hasattr(tool, "apply_memory")         else set()
+
+    def apart(key, left, right):
+        if key not in derived:
+            return left != right
+        try:
+            return abs(int(left) - int(right)) > max(8, int(left) * 0.01)
+        except (TypeError, ValueError):
+            return left != right
+
     differs = {k: (quick.get(k), tab.get(k)) for k in quick
-               if k in tab and quick[k] != tab[k]}
+               if k in tab and apart(k, quick[k], tab[k])}
     if differs:
         fails += 1
         print("FAIL", tool.name.ljust(13), "tab disagrees with Quick Start:", differs)
