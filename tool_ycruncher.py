@@ -23,7 +23,7 @@ from toolbase import Field, LaunchSpec, Preset, Tool, ToolUnavailable
 
 # The valid values for [algorithm], in the order the manual lists them. N63,
 # N64 and VST are aliases y-cruncher still accepts; only the canonical names
-# are offered here so a saved queue does not depend on an alias surviving.
+# are offered here, so nothing saved depends on an alias surviving.
 ALGORITHMS = (
     ("BKT", "Basecase + Karatsuba + Toom-Cook"),
     ("BBP", "Bailey-Borwein-Plouffe digit extraction"),

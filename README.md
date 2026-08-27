@@ -1,12 +1,14 @@
 # Roch StressTest
 
-**Roch StressTest** — one window for every stress test on the machine. Prime95, y-cruncher, TestMem5, RAM Test Pro and Linpack, each with presets that say what they actually do, a time limit, live failure detection, and a queue that chains them into one unattended stability run. Python 3.13 / CustomTkinter, same theme as [Roch Viewer](https://github.com/RochStudio/Roch-Viewer) and [Roch GPU OC](https://github.com/RochStudio/Roch-GPU).
+**Roch StressTest** — one window for every stress test on the machine. Prime95, y-cruncher, TestMem5, RAM Test Pro and Linpack, each with presets that say what they actually do, a time limit, and live failure detection. Python 3.13 / CustomTkinter, same theme as [Roch Viewer](https://github.com/RochStudio/Roch-Viewer) and [Roch GPU OC](https://github.com/RochStudio/Roch-GPU).
 
 It does not implement a single test. Every tool runs exactly as it would if you started it yourself; what this adds is the part they leave to you.
 
 ```
 Roch StressTest/
-├─ main.py                 the window: Quick Start, tool tabs, queue, log
+├─ main.py                 the window: Quick Start, tool tabs, log
+├─ memory.py               the memory cleaner and the live RAM readout
+├─ winui.py                filling in RAM Test Pro's window, which has no CLI
 ├─ runner.py               starts a test, watches it, enforces the time limit
 ├─ errors.py               the patterns that decide a run has failed
 ├─ toolset.py              the registry of tools, in tab order
@@ -25,11 +27,11 @@ RUN_AS_ADMIN.bat
 
 Or build a standalone EXE with `BUILD_EXE.bat` and copy `dist\RochStressTest.exe` up one level, next to the tool folders — it looks for them beside itself.
 
-Administrator rights are asked for once at launch. TestMem5 and RAM Test Pro need them to lock physical pages, Prime95 to set affinity. Asking once beats each tool failing differently three hours into a queue.
+Administrator rights are asked for once at launch. TestMem5 and RAM Test Pro need them to lock physical pages, Prime95 to set affinity. Asking once beats a tool failing three hours into a run for want of a privilege.
 
 ## What each tab does
 
-**Quick Start** is the front page: one card per tool, each running that tool's default configuration with a single button, plus **Queue all** to chain every default in order. Each tool's own tab opens on the same defaults, so the two never disagree about what "default" means.
+**Quick Start** is the front page: two columns of cards, one per tool, each running that tool's default configuration with a single button. Each tool's own tab opens on the same defaults, so the two never disagree about what "default" means. One test runs at a time.
 
 | Tool | Presets | Driven by |
 |---|---|---|
@@ -43,7 +45,7 @@ Memory figures are computed from what is actually free when you pick a preset, n
 
 ## Memory cleaner
 
-The toolbar carries a live `RAM x / y GB free` readout and a **Clean memory** button, because a memory test only tests the memory it can actually get. Windows counts its standby list — pages it has finished with but is holding in case they are wanted again — as used, so on a machine that has been up a while, asking for 28 GB quietly takes part of it from the page file and the run measures an SSD rather than the DIMMs.
+The toolbar carries a live `RAM x / y MB free` readout and a **Clean memory** button, because a memory test only tests the memory it can actually get. Windows counts its standby list — pages it has finished with but is holding in case they are wanted again — as used, so on a machine that has been up a while, asking for 28 GB quietly takes part of it from the page file and the run measures an SSD rather than the DIMMs.
 
 Cleaning empties every process's working set, then purges the standby and low-priority standby lists, through `NtSetSystemInformation` with `SystemMemoryListInformation`. That needs `SeProfileSingleProcessPrivilege`, which an administrator has but which is *not* enabled in the token until it is asked for. It is implemented in `memory.py` rather than bundling a third-party binary; the approach was checked against danskee's Memory Cleaner, whose DLL exports one `CleanMemory` and imports exactly those three calls.
 
@@ -81,13 +83,7 @@ A tool that finishes on its own is left on screen rather than killed, so y-crunc
 
 An exit is judged on what the tool said, not just on its exit code. Windows gives a console process exit code `0xC000013A` when it is sent Ctrl+C or its window is closed; that says nothing about the machine, so it is reported as stopped, never as a failure. A clean exit from a tool that announces its own completion, *without* that announcement, is also stopped rather than passed — closing a window mid-run is not a pass. A real failure still wins over both: the error line is checked first.
 
-A failure kills the process tree, stops the queue, beeps, switches to the Log tab, and writes a transcript to `%LOCALAPPDATA%\RochStressTest\logs\FAILED-<timestamp>.txt` — because the run that matters is the one that failed at 4am.
-
-## The queue
-
-Set a test up on its tab, press **Add to queue**, repeat, then **Run queue**. Steps run top to bottom and the first failure ends the run. A sensible overnight order is TestMem5 → y-cruncher → Prime95 → Linpack: memory first, because a memory fault will fail the CPU tests too and send you looking in the wrong place.
-
-Give every step a time limit. A step set to `0` never finishes on its own and the queue will stop there.
+A failure kills the process tree, beeps, switches to the Log tab, and writes a transcript to `%LOCALAPPDATA%\RochStressTest\logs\FAILED-<timestamp>.txt` — because the run that matters is the one that failed at 4am.
 
 ## Four things found while building this
 

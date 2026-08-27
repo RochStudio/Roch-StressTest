@@ -162,11 +162,11 @@ class Result:
         return max(0, self.after_mb - self.before_mb)
 
     def describe(self):
-        text = "Memory cleaned: {:.1f} GB free before, {:.1f} GB after".format(
-            self.before_mb / 1024.0, self.after_mb / 1024.0
+        text = "Memory cleaned: {:,} MB free before, {:,} MB after".format(
+            self.before_mb, self.after_mb
         )
         if self.freed_mb:
-            text += " ({:.1f} GB freed)".format(self.freed_mb / 1024.0)
+            text += " ({:,} MB freed)".format(self.freed_mb)
         else:
             text += " (nothing to free)"
         if self.failed:

@@ -6,7 +6,7 @@ tool is supervised the same way:
   * its output is collected -- from the pipe when it has one, from its log
     files when it does not,
   * every line is checked against that tool's failure patterns,
-  * a wall-clock limit is enforced, because only y-cruncher and Linpack can
+  * a wall-clock limit is enforced, because most of these tools cannot
     limit themselves,
   * and the process tree is killed properly when the run ends, whichever way
     it ends.
@@ -507,79 +507,3 @@ class Runner:
                 stream.close()
             except Exception:
                 pass
-
-
-class Sequence:
-    """Runs a list of steps one after another, stopping on the first failure.
-
-    A step is ``(tool, config, label)``. This is what makes a stability run
-    rather than a stress test: an hour of TM5, then half an hour of
-    y-cruncher, then Linpack, unattended, with the first failure ending it and
-    saying which step failed.
-    """
-
-    def __init__(self, runner):
-        self.runner = runner
-        self.steps = []
-        self.index = -1
-        self._thread = None
-        self._abort = threading.Event()
-        self.results = []
-
-    @property
-    def running(self):
-        return self._thread is not None and self._thread.is_alive()
-
-    def start(self, steps, root):
-        if self.running:
-            raise RuntimeError("the queue is already running")
-        self.steps = list(steps)
-        self.results = []
-        self.index = -1
-        self._abort.clear()
-        self._thread = threading.Thread(
-            target=self._run_all, args=(root,), name="stress-queue", daemon=True
-        )
-        self._thread.start()
-
-    def stop(self):
-        self._abort.set()
-        self.runner.stop()
-
-    def _run_all(self, root):
-        for index, (tool, config, label) in enumerate(self.steps):
-            if self._abort.is_set():
-                break
-            self.index = index
-            self.runner._emit(
-                "step",
-                index=index,
-                total=len(self.steps),
-                label=label,
-                state=RUNNING,
-            )
-            try:
-                spec = tool.build(dict(config), root)
-                self.runner.start(spec, label)
-            except Exception as error:
-                self.results.append((label, BROKEN, str(error)))
-                self.runner._emit(
-                    "step", index=index, total=len(self.steps),
-                    label=label, state=BROKEN, note=str(error),
-                )
-                break
-
-            self.runner.wait()
-            state = self.runner.state
-            self.results.append((label, state, self.runner.finding))
-            self.runner._emit(
-                "step", index=index, total=len(self.steps), label=label,
-                state=state, note=self.runner.finding,
-            )
-            # A failure ends the queue: everything after it would be testing a
-            # machine already known to be unstable.
-            if state in (FAILED, BROKEN, STOPPED):
-                break
-
-        self.index = -1
-        self.runner._emit("queue-done", results=list(self.results))

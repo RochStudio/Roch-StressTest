@@ -175,9 +175,6 @@ class ToolPanel:
         widgets.action_button(
             bar, "Start", self.start, kind="start", width=120
         ).pack(side="left", padx=(10, 0), pady=8)
-        widgets.action_button(
-            bar, "Add to queue", self.add_to_queue, width=130
-        ).pack(side="left", padx=(8, 0), pady=8)
 
     # -- behaviour -------------------------------------------------------
 
@@ -270,18 +267,13 @@ class ToolPanel:
     def start(self):
         self.app.start_single(self.tool, self.config(), self.label())
 
-    def add_to_queue(self):
-        self.app.add_to_queue(self.tool, self.config(), self.label())
-
 
 class StressApp:
     def __init__(self, root):
         self.root = root
         self.root_path = toolset.tools_root()
         self.runner = runner_module.Runner()
-        self.sequence = runner_module.Sequence(self.runner)
         self.panels = {}
-        self.queue_steps = []
         self.log_lines = 0
         self.current_label = ""
         self.stat_text = ""
@@ -429,7 +421,6 @@ class StressApp:
             else:
                 self._build_missing_panel(tab, tool)
 
-        self._build_queue_tab(self.tabview.add("Queue"))
         self._build_log_tab(self.tabview.add("Log"))
         self.tabview.set("Quick Start")
 
@@ -440,28 +431,16 @@ class StressApp:
         tool's default configuration -- the same one its own tab opens on --
         so nothing here needs reading before it can be used.
         """
-        bar = ctk.CTkFrame(parent, fg_color=theme.SECTION_COLOR,
-                           corner_radius=6, height=42)
-        bar.pack(side="bottom", fill="x", padx=6, pady=(6, 6))
-        widgets.action_button(
-            bar, "Queue all", self.queue_all_quick, width=120
-        ).pack(side="left", padx=(10, 0), pady=8)
-        ctk.CTkLabel(
-            bar,
-            text="Adds every test below to the queue, in this order.",
-            font=(theme.FONT_FAMILY, 10), text_color=theme.SUBTITLE_COLOR,
-            anchor="w",
-        ).pack(side="left", padx=(10, 0), pady=8)
-
         frame = ctk.CTkScrollableFrame(parent, corner_radius=0,
                                        fg_color=theme.BG_COLOR)
         frame.pack(fill="both", expand=True)
 
         ctk.CTkLabel(
             frame,
-            text=("Each button runs that tool's default configuration. The "
-                  "tool's own tab opens on the same settings, so change them "
-                  "there if you want something else."),
+            text=("Each button runs that tool's default configuration, one "
+                  "test at a time. The tool's own tab opens on the same "
+                  "settings, so change them there if you want something "
+                  "else."),
             font=theme.COMPACT_FONT, text_color=theme.SUBTITLE_COLOR,
             anchor="w", justify="left", wraplength=900,
         ).pack(fill="x", padx=12, pady=(10, 8))
@@ -512,13 +491,8 @@ class StressApp:
             kind="start", width=110,
         )
         start.pack(side="left")
-        add = widgets.action_button(
-            buttons, "Add to queue", lambda t=tool: self.add_quick(t), width=130
-        )
-        add.pack(side="left", padx=(8, 0))
         if not available:
             start.configure(state="disabled")
-            add.configure(state="disabled")
 
     def _build_missing_panel(self, parent, tool):
         frame = ctk.CTkFrame(parent, fg_color=theme.BG_COLOR)
@@ -536,37 +510,6 @@ class StressApp:
             font=theme.COMPACT_FONT, text_color=theme.SUBTITLE_COLOR,
             anchor="w", justify="left",
         ).pack(anchor="w", padx=16)
-
-    def _build_queue_tab(self, parent):
-        frame = ctk.CTkFrame(parent, fg_color=theme.BG_COLOR)
-        frame.pack(fill="both", expand=True)
-
-        ctk.CTkLabel(
-            frame,
-            text=("Tests run top to bottom, and the first failure ends the "
-                  "run. Give every step a time limit -- a step set to 0 "
-                  "never finishes on its own and the queue will stop there."),
-            font=theme.COMPACT_FONT, text_color=theme.SUBTITLE_COLOR,
-            anchor="w", justify="left", wraplength=700,
-        ).pack(fill="x", padx=12, pady=(10, 8))
-
-        self.queue_box = ctk.CTkTextbox(
-            frame, font=theme.COMPACT_FONT, fg_color=theme.BG_COLOR2,
-            border_color=theme.BORDER_COLOR, border_width=1,
-            text_color=theme.TEXT_COLOR, activate_scrollbars=True,
-        )
-        self.queue_box.pack(fill="both", expand=True, padx=12, pady=(0, 8))
-        self.queue_box.configure(state="disabled")
-
-        bar = ctk.CTkFrame(frame, fg_color="transparent")
-        bar.pack(fill="x", padx=12, pady=(0, 12))
-        widgets.action_button(bar, "Run queue", self.start_queue,
-                              kind="start", width=120).pack(side="left")
-        widgets.action_button(bar, "Remove last", self.remove_last,
-                              width=110).pack(side="left", padx=(8, 0))
-        widgets.action_button(bar, "Clear", self.clear_queue,
-                              width=80).pack(side="left", padx=(8, 0))
-        self.refresh_queue()
 
     def _build_log_tab(self, parent):
         frame = ctk.CTkFrame(parent, fg_color=theme.BG_COLOR)
@@ -627,8 +570,7 @@ class StressApp:
         try:
             available, total, used = memory_module.reading()
             self.ram_label.configure(
-                text="RAM {:.1f} / {:.1f} GB free".format(
-                    available / 1024.0, total / 1024.0),
+                text="RAM {:,} / {:,} MB free".format(available, total),
                 # Red once memory is nearly gone, which during a 28 GB run is
                 # the normal state and worth being able to see at a glance.
                 text_color=(theme.FAIL_COLOR if used >= 90
@@ -657,8 +599,8 @@ class StressApp:
 
     def _update_ram_now(self):
         available, total, _used = memory_module.reading()
-        self.ram_label.configure(text="RAM {:.1f} / {:.1f} GB free".format(
-            available / 1024.0, total / 1024.0))
+        self.ram_label.configure(
+            text="RAM {:,} / {:,} MB free".format(available, total))
 
     # -- log -------------------------------------------------------------
 
@@ -704,7 +646,7 @@ class StressApp:
     # -- running ---------------------------------------------------------
 
     def busy(self):
-        return self.runner.running or self.sequence.running
+        return self.runner.running
 
     def start_single(self, tool, config, label):
         if self.busy():
@@ -743,80 +685,8 @@ class StressApp:
         self.start_single(tool, tool.quick_config(self.root_path),
                           self.quick_label(tool))
 
-    def add_quick(self, tool):
-        self.add_to_queue(tool, tool.quick_config(self.root_path),
-                          self.quick_label(tool))
-
-    def queue_all_quick(self):
-        """Queue every available tool's default, in tab order."""
-        for tool in toolset.TOOLS:
-            if tool.available(self.root_path):
-                self.queue_steps.append((tool, tool.quick_config(self.root_path),
-                                         self.quick_label(tool)))
-        self.refresh_queue()
-        self.tabview.set("Queue")
-
-    def add_to_queue(self, tool, config, label):
-        self.queue_steps.append((tool, dict(config), label))
-        self.refresh_queue()
-        self.tabview.set("Queue")
-
-    def remove_last(self):
-        if self.queue_steps:
-            self.queue_steps.pop()
-            self.refresh_queue()
-
-    def clear_queue(self):
-        self.queue_steps = []
-        self.refresh_queue()
-
-    def refresh_queue(self):
-        self.queue_box.configure(state="normal")
-        self.queue_box.delete("1.0", "end")
-        if not self.queue_steps:
-            self.queue_box.insert(
-                "end",
-                "The queue is empty.\n\n"
-                "Set a test up on its own tab, then press \"Add to queue\".\n"
-                "A useful overnight run is TestMem5 Extreme, then y-cruncher, "
-                "then Linpack -- memory first, because a memory fault will "
-                "fail the CPU tests too and send you looking in the wrong "
-                "place.",
-            )
-        else:
-            total = 0
-            for index, (_tool, config, label) in enumerate(self.queue_steps, 1):
-                minutes = int(config.get("duration", 0))
-                total += minutes
-                limit = (str(minutes) + " min") if minutes else "no limit"
-                self.queue_box.insert(
-                    "end", "{:>2}. {:<44} {}\n".format(index, label, limit)
-                )
-            self.queue_box.insert(
-                "end", "\nTotal: " + format_duration(total * 60)
-                + (" (plus any step with no limit)" if any(
-                    not step[1].get("duration") for step in self.queue_steps)
-                   else "")
-            )
-        self.queue_box.configure(state="disabled")
-
-    def start_queue(self):
-        if self.busy():
-            self.log("Already running. Stop the current test first.")
-            return
-        if not self.queue_steps:
-            self.log("The queue is empty.")
-            return
-        self.log("")
-        self.log("=== Queue: " + str(len(self.queue_steps)) + " steps ===")
-        self.sequence.start(self.queue_steps, self.root_path)
-        self.stop_button.configure(state="normal")
-
     def stop_all(self):
-        if self.sequence.running:
-            self.sequence.stop()
-        else:
-            self.runner.stop()
+        self.runner.stop()
         self.log("Stop requested.")
 
     # -- event pump ------------------------------------------------------
@@ -843,14 +713,6 @@ class StressApp:
             self._update_clock(data.get("elapsed", 0), data.get("remaining"))
         elif kind == "state":
             self._on_state(data["state"], data.get("note", ""))
-        elif kind == "step":
-            self.current_label = data.get("label", "")
-            if data.get("state") == runner_module.RUNNING:
-                self.log("")
-                self.log("=== Step {}/{}: {} ===".format(
-                    data["index"] + 1, data["total"], data["label"]))
-        elif kind == "queue-done":
-            self._on_queue_done(data.get("results", []))
 
     def _update_clock(self, elapsed, remaining):
         text = format_duration(elapsed)
@@ -883,10 +745,8 @@ class StressApp:
         if state == runner_module.FAILED:
             self._announce_failure(note)
 
-        # A queue keeps the Stop button live until the whole sequence ends.
-        if not self.sequence.running:
-            self.stop_button.configure(state="disabled")
-            self.clock_label.configure(text="")
+        self.stop_button.configure(state="disabled")
+        self.clock_label.configure(text="")
 
     def _announce_failure(self, note):
         """Make a failure impossible to miss, and keep a copy of it.
@@ -917,26 +777,9 @@ class StressApp:
         except Exception:
             pass
 
-    def _on_queue_done(self, results):
-        self.log("")
-        self.log("=== Queue finished ===")
-        for label, state, note in results:
-            line = "  " + STATE_TEXT.get(state, state).ljust(16) + label
-            if note and state == runner_module.FAILED:
-                line += "  -- " + note
-            self.log(line)
-        if results and all(state == runner_module.PASSED
-                           for _label, state, _note in results):
-            self._set_state(runner_module.PASSED,
-                            "Every step passed: " + str(len(results)) + " of "
-                            + str(len(results)) + ".")
-        self.stop_button.configure(state="disabled")
-        self.clock_label.configure(text="")
-
     def on_close(self):
         """Never leave a stress test running with no window to stop it."""
         if self.busy():
-            self.sequence.stop()
             self.runner.stop()
         self.root.destroy()
 
@@ -954,7 +797,7 @@ def run_as_admin():
 
     TestMem5 and RAM Test Pro need it to lock physical pages, and Prime95
     needs it to set process priority and affinity. Asking once here is far
-    better than each tool failing differently halfway through a queue.
+    better than a tool failing halfway through a run for want of one.
     """
     parameters = None
     if not getattr(sys, "frozen", False):
