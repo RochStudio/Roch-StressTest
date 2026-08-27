@@ -59,16 +59,21 @@ class Prime95(Tool):
         Field("alternate_in_place", "Alternate in-place and RAM", "bool", True,
               hint="Prime95's own default when a run is given memory to use."),
         Field("duration", "Stop after", "int", 60, minimum=0, maximum=100000,
-              unit="min", hint="0 runs until you press Stop."),
+              unit="min",
+              hint="The only way a torture test ends. Prime95 has no cycle "
+                   "count: it walks the FFT range, minutes-per-FFT at each "
+                   "size, then starts again. 0 runs until you press Stop."),
         Field("extra", "Extra prime.txt lines", "text", "",
               hint="Passed through verbatim, e.g. TortureWeak=1048576."),
     )
 
     # What the Quick Start page runs, and what this tab opens on.
     quick_start = {
-        "preset": "Smallest FFTs (4K-32K)",
-        "values": {"duration": 60},
-        "note": "In-cache, one hour. The fastest way to fail a bad core clock.",
+        "preset": "Large FFTs (2048K-8192K)",
+        "values": {"duration": 30},
+        "note": "Memory controller and RAM, 30 minutes. Prime95 has no cycle "
+                "count -- it sweeps the FFT range and starts over until the "
+                "time is up.",
     }
 
     # The four the torture dialog offers, plus one for DDR5 boards where the

@@ -1,1 +1,1 @@
-DDR4_DDR5_universal.cfg
+default.cfg
