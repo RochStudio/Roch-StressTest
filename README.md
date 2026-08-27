@@ -48,12 +48,14 @@ What each tool runs from Quick Start, and what its own tab opens on:
 | Tool | Default |
 |---|---|
 | Prime95 | Smallest FFTs (4K–32K), 60 min |
-| y-cruncher | All algorithms, 60 min |
+| y-cruncher | VT3 (VSTv3) alone, 28 GB, 30 min |
 | TestMem5 | 1usmus v3 @ 1usmus, 25 cycles, no time limit |
 | RAM Test Pro | DDR4_DDR5_universal, no time limit |
 | Linpack | 4 GB, 30 min |
 
-TM5's cycle count lives inside the `.cfg`, so overriding it means writing a copy. That copy goes to `bin/MT.cfg` — the name TM5 falls back to anyway — with only the `Cycles=` line changed and every other byte identical. The stock profiles are never edited: a cycle count set here is a property of the run, not of the profile.
+TM5's cycle count lives inside the `.cfg`, so overriding it means writing a copy. That copy goes to `bin/Roch active.cfg`, with only the `Cycles=` line changed and every other byte identical. The stock profiles are never edited: a cycle count set here is a property of the run, not of the profile.
+
+Every default is reproduced as the command line you would have typed. y-cruncher's, for instance, is `pause:1 stress -M:28GB -TL:1800 VSTv3` — plus `skip-warnings`, without which it waits at a startup prompt nobody is there to answer, `colors:0` to keep escape codes out of the log, and `logfile:` for an artifact you can open afterwards.
 
 ## Failure detection
 
@@ -75,7 +77,7 @@ Give every step a time limit. A step set to `0` never finishes on its own and th
 
 ## Four things found while building this
 
-Both are handled in the code; they are written down because they cost an afternoon each and neither is documented anywhere obvious.
+All are handled in the code; they are written down because each cost an afternoon and none is documented anywhere obvious.
 
 **Prime95 torture settings do not live in `local.txt`.** Every reference, including Prime95's own `undoc.txt`, says they do. In 30.19 that is a migration path: give it a `local.txt` and it folds those keys into `prime.txt`, deletes `local.txt`, and carries on. `tool_prime95.py` writes `prime.txt` directly. Verifiable — ask for `MinTortureFFT=MaxTortureFFT=1024` and `results.txt` says `Self-test 1024K passed!` and nothing else.
 

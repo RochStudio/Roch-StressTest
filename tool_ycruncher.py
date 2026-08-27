@@ -51,9 +51,14 @@ class YCruncher(Tool):
                    "subset, e.g. VSTv3 FFTv4."),
         Field("memory", "Memory to use", "int", 0, minimum=0, maximum=1048576,
               unit="MB", hint="0 leaves y-cruncher's own default in place."),
-        Field("per_test", "Seconds per test", "int", 60, minimum=5,
+        Field("per_test", "Seconds per test", "int", 60, minimum=0,
               maximum=86400, unit="s",
-              hint="How long each algorithm runs before the next."),
+              hint="How long each algorithm runs before the next. 0 omits -D "
+                   "and leaves y-cruncher's own default."),
+        Field("pause", "Pause at the end", "bool", False,
+              hint="y-cruncher's pause:1. It makes no difference here: the "
+                   "console is hidden and its input is closed, so the prompt "
+                   "is printed to the log and the process exits anyway."),
         Field("duration", "Stop after", "int", 60, minimum=0, maximum=100000,
               unit="min",
               hint="Passed to y-cruncher as -TL. 0 runs until you press Stop."),
@@ -63,10 +68,13 @@ class YCruncher(Tool):
                    "machine but under-stresses it."),
     )
 
+    # What the Quick Start page runs, and what this tab opens on.
     quick_start = {
-        "preset": "All algorithms",
-        "values": {"duration": 60, "per_test": 60},
-        "note": "Every algorithm, one hour, memory sized to this machine.",
+        "preset": "VSTv3 only",
+        "values": {"memory": 28 * 1024, "duration": 30, "per_test": 0,
+                   "pause": True},
+        "note": "VT3 alone, 28 GB, 30 minutes. More memory than is normally "
+                "free, so Windows will page to reach it.",
     }
 
     presets = (
@@ -99,6 +107,18 @@ class YCruncher(Tool):
         "High": 2,
     }
 
+    @staticmethod
+    def _memory_argument(megabytes):
+        """-M in whole gigabytes when it divides evenly, megabytes otherwise.
+
+        Cosmetic, and worth it: the command line is written to the log, and
+        "-M:28GB" is the figure somebody typed, while "-M:28672M" is the same
+        number after arithmetic they now have to redo to check it.
+        """
+        if megabytes % 1024 == 0:
+            return "-M:" + str(megabytes // 1024) + "GB"
+        return "-M:" + str(megabytes) + "M"
+
     def suggested_memory(self, preset_name):
         """Half of what is free, which is y-cruncher's own guidance.
 
@@ -122,12 +142,18 @@ class YCruncher(Tool):
         logfile = os.path.join(work, "ycruncher.log")
 
         # Startup parameters come before the option, per the manual.
-        # pause:-2 is the one that matters for automation: without it a
-        # finished or failed run leaves a console waiting on ENTER forever.
+        #
+        # skip-warnings is the one that is not optional: without it y-cruncher
+        # waits at a startup prompt for ENTER that nobody is there to press.
+        #
+        # pause is the user's choice and safe either way. pause:1 prints
+        # "Press any key to continue" and then exits immediately regardless,
+        # because the child's input is closed; measured at 6.3s against 6.4s
+        # for pause:-2 on an identical run.
         argv = [
             exe,
             "skip-warnings",
-            "pause:-2",
+            "pause:1" if config.get("pause") else "pause:-2",
             "colors:0",
             f"priority:{self._PRIORITY.get(config.get('priority'), 0)}",
             f"logfile:{logfile}",
@@ -136,10 +162,15 @@ class YCruncher(Tool):
 
         memory = int(config.get("memory", 0))
         if memory > 0:
-            argv.append(f"-M:{memory}M")
+            argv.append(self._memory_argument(memory))
 
-        per_test = int(config.get("per_test", 60))
-        argv.append(f"-D:{per_test}")
+        # 0 omits -D entirely. That is not the same as a short one: -TL is
+        # only checked between tests, so with no -D the run stops at the
+        # first test boundary at or after the limit rather than on it. The
+        # runner's own clock is what bounds the overshoot.
+        per_test = int(config.get("per_test", 0))
+        if per_test > 0:
+            argv.append(f"-D:{per_test}")
 
         duration_seconds = int(config.get("duration", 0)) * 60
         if duration_seconds > 0:
@@ -167,11 +198,17 @@ class YCruncher(Tool):
             argv=argv,
             cwd=os.path.dirname(exe),
             console=True,
-            watch_files=[logfile],
+            # The log file is written for the user to open afterwards, but it
+            # is deliberately not watched: y-cruncher puts the same text on
+            # stdout, which is already being read, so watching both printed
+            # every line of the run twice.
+            watch_files=[],
             error_key=self.key,
             summary=(
                 f"y-cruncher {' '.join(selected) if selected else 'all tests'}"
-                f", {memory or 'default'} MB, {per_test}s per test"
+                f", {self._memory_argument(memory)[3:] if memory else 'default memory'}"
+                + (f", {per_test}s per test" if per_test > 0
+                   else ", default test length")
             ),
             duration_seconds=duration_seconds,
             creation_flags=self._no_window_flags(),
