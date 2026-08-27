@@ -156,7 +156,11 @@ class Runner:
                 bufsize=0,
             )
 
-        self._process = subprocess.Popen(spec.argv, **popen_args)
+        # A spec with a raw command line is handed to Windows verbatim; only
+        # TestMem5 needs that, and only because of the shape of its arguments.
+        self._process = subprocess.Popen(
+            spec.cmdline if spec.cmdline else spec.argv, **popen_args
+        )
         self._set_state(RUNNING, label or spec.summary)
         self._thread = threading.Thread(
             target=self._supervise, name="stress-runner", daemon=True
@@ -199,6 +203,11 @@ class Runner:
         reference_residual = None
         trials = 0
         best = worst = total = 0.0
+
+        # A tool that announces it has finished rather than exiting. Read from
+        # its output, because waiting on the process would wait for ever.
+        finished = errors.compile_plain(spec.completion_patterns)
+        aborted = errors.compile_plain(spec.abort_patterns)
 
         reader = None
         pipe_lines = queue.Queue()
@@ -268,6 +277,18 @@ class Runner:
                 hit = errors.scan(stripped, spec.error_key)
                 if hit:
                     outcome, note = FAILED, hit
+                    break
+
+                # Checked after the error patterns, so "the testing is
+                # completed, is revealed 3 of errors!" is a failure rather
+                # than a completion.
+                if finished and errors.matches(stripped, finished):
+                    outcome, note = PASSED, (
+                        "The tool reported it had finished: " + stripped)
+                    break
+                if aborted and errors.matches(stripped, aborted):
+                    outcome, note = STOPPED, (
+                        "The tool stopped before finishing: " + stripped)
                     break
 
             if outcome:

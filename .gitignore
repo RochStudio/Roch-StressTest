@@ -13,6 +13,14 @@ venv/
 # Written by this program when it launches TestMem5: a copy of the profile
 # picked in the window, for TM5 to fall back on. Regenerated every run.
 TestMem5/bin/MT.cfg
+TestMem5/bin/Roch active.cfg
+
+# TM5's own run log, and the crash dump it writes beside it. Read by this
+# program to detect failures; both are this machine's history, not source.
+TestMem5/Log.txt
+TestMem5/Crash.log
+# TM5 0.13.1 writes its own settings here the first time it runs.
+TestMem5/TM5.ini
 
 # Prime95 keeps its state in LOCALAPPDATA, but a stray run started by hand in
 # the distribution folder leaves these behind.

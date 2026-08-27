@@ -59,9 +59,39 @@ YCRUNCHER = [
     r"does not match",
 ]
 
-# TM5 and RAM Test Pro are windowed and only write a log when they are told
-# to, so these fire on whatever they do leave behind. The count guard matters
-# most here: both print a running error total every cycle.
+# TestMem5 0.13.1 writes Log.txt beside TM5.exe, so its failures are readable
+# after all. These are its own message templates, lifted from the strings in
+# TM5.exe and TM5.dll rather than guessed:
+#
+#   "Error in test #%li through %s."
+#   "The testing is completed, is revealed %li of errors!"
+#   "detected %li error(s)."
+#   "Critical error, programm stopped!"   (its spelling, not a typo here)
+#
+# and the ones that must NOT fire, which are the same shape:
+#
+#   "Testing completed in %s, no errors."
+#   "The testing is completed, of errors is not detected."
+#   "Testing stopped by user"
+#
+# The last group is the reason this list is separate from the generic memory
+# patterns. TM5 distinguishes a failure of the memory under test from a
+# failure of TM5 itself -- "Failed to allocate memory for testing", "WARNING!
+# Failed to lock memory", a missing MT0.DLL -- and says so in as many words:
+# "This is not a failure of tested memory." Reporting those as instability
+# would send somebody chasing a timing that was never at fault.
+TESTMEM5 = [
+    r"Error in test",
+    r"is revealed [1-9]\d* of errors",
+    r"detected [1-9]\d* error",
+    r"(?:Critical|Fatal) error, programm stopped",
+    r"encountered an error, type",
+    r"caused by a failure of tested memory",
+]
+
+# RAM Test Pro is windowed and only writes a log when told to, so these fire
+# on whatever it does leave behind. The count guard matters most here: it
+# prints a running error total every cycle.
 MEMTEST = [
     # "4 errors" fails; "0 errors" -- the line a clean cycle writes every
     # pass -- cannot match, because the count may not start with a zero.
@@ -81,14 +111,46 @@ LINPACK = [
 ]
 
 
+# TM5 finishes its cycles and then just sits there with its window open, so
+# "done" has to be read out of the log rather than waited for as a process
+# exit. These are its two endings, and they are not the same thing: completing
+# the configured cycles is a pass, and being stopped early -- by a person, by
+# Windows, by another program taking the memory -- is not.
+TESTMEM5_COMPLETE = [
+    r"Testing completed",
+    r"The testing is completed, of errors is not detected",
+]
+
+TESTMEM5_ABORTED = [
+    r"Testing stopped by",
+]
+
+
 def _compile(patterns):
     return [re.compile(p, re.IGNORECASE) for p in patterns + _COMMON]
+
+
+def compile_plain(patterns):
+    """Compile a list without adding the common crash patterns."""
+    return [re.compile(p, re.IGNORECASE) for p in patterns]
+
+
+def matches(text, compiled):
+    """The first line of *text* matching any of *compiled*, or None."""
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        for pattern in compiled:
+            if pattern.search(stripped):
+                return stripped
+    return None
 
 
 PATTERNS = {
     "prime95": _compile(PRIME95),
     "ycruncher": _compile(YCRUNCHER),
-    "testmem5": _compile(MEMTEST),
+    "testmem5": _compile(TESTMEM5 + MEMTEST),
     "ramtest": _compile(MEMTEST),
     "linpack": _compile(LINPACK),
 }

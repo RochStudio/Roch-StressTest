@@ -64,6 +64,13 @@ class Prime95(Tool):
               hint="Passed through verbatim, e.g. TortureWeak=1048576."),
     )
 
+    # What the Quick Start page runs, and what this tab opens on.
+    quick_start = {
+        "preset": "Smallest FFTs (4K-32K)",
+        "values": {"duration": 60},
+        "note": "In-cache, one hour. The fastest way to fail a bad core clock.",
+    }
+
     # The four the torture dialog offers, plus one for DDR5 boards where the
     # interesting failures live above 8192K, and Custom for everything else.
     presets = (

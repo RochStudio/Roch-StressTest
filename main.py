@@ -107,7 +107,7 @@ class ToolPanel:
         self._build_settings_section(frame)
         self._build_detection_section(frame)
 
-        self.apply_preset(self.preset_row.value(), initial=True)
+        self.apply_quick_start()
 
     # -- construction ----------------------------------------------------
 
@@ -176,6 +176,31 @@ class ToolPanel:
         ).pack(side="left", padx=(8, 0), pady=8)
 
     # -- behaviour -------------------------------------------------------
+
+    def apply_quick_start(self):
+        """Open this tab on the tool's default configuration.
+
+        The same values the Quick Start page runs, so the two never disagree
+        about what "default" means. Pressing Start here without touching
+        anything does exactly what the Quick Start button does.
+        """
+        name = self.tool.quick_preset_name(self.app.root_path)
+        if name:
+            self.preset_row.set(name)
+        self.apply_preset(name, initial=True)
+
+        overrides = self.tool.quick_start.get("values", {})
+        if not overrides:
+            return
+        self._loading = True
+        try:
+            for key, value in overrides.items():
+                if key in self.rows:
+                    self.rows[key].set(value)
+                else:
+                    self.hidden[key] = value
+        finally:
+            self._loading = False
 
     def _preset_changed(self):
         self.apply_preset(self.preset_row.value())
@@ -374,6 +399,9 @@ class StressApp:
         self.tabview._segmented_button._selected_text_color = theme.TEXT_COLOR
         self.tabview.pack(fill="both", expand=True, padx=2, pady=2)
 
+        # First, because it is the answer to "I just want to run the thing".
+        self._build_quick_tab(self.tabview.add("Quick Start"))
+
         for tool in toolset.TOOLS:
             tab = self.tabview.add(tool.name)
             if tool.available(self.root_path):
@@ -383,6 +411,75 @@ class StressApp:
 
         self._build_queue_tab(self.tabview.add("Queue"))
         self._build_log_tab(self.tabview.add("Log"))
+        self.tabview.set("Quick Start")
+
+    def _build_quick_tab(self, parent):
+        """One card per tool: what its default runs, and a button to run it.
+
+        The whole page is a shortcut past the other tabs. Each card starts the
+        tool's default configuration -- the same one its own tab opens on --
+        so nothing here needs reading before it can be used.
+        """
+        bar = ctk.CTkFrame(parent, fg_color=theme.SECTION_COLOR,
+                           corner_radius=6, height=42)
+        bar.pack(side="bottom", fill="x", padx=6, pady=(6, 6))
+        widgets.action_button(
+            bar, "Queue all", self.queue_all_quick, width=120
+        ).pack(side="left", padx=(10, 0), pady=8)
+        ctk.CTkLabel(
+            bar,
+            text="Adds every test below to the queue, in this order.",
+            font=(theme.FONT_FAMILY, 10), text_color=theme.SUBTITLE_COLOR,
+            anchor="w",
+        ).pack(side="left", padx=(10, 0), pady=8)
+
+        frame = ctk.CTkScrollableFrame(parent, corner_radius=0,
+                                       fg_color=theme.BG_COLOR)
+        frame.pack(fill="both", expand=True)
+
+        ctk.CTkLabel(
+            frame,
+            text=("Each button runs that tool's default configuration. The "
+                  "tool's own tab opens on the same settings, so change them "
+                  "there if you want something else."),
+            font=theme.COMPACT_FONT, text_color=theme.SUBTITLE_COLOR,
+            anchor="w", justify="left", wraplength=680,
+        ).pack(fill="x", padx=12, pady=(10, 8))
+
+        for tool in toolset.TOOLS:
+            self._build_quick_card(frame, tool)
+
+    def _build_quick_card(self, parent, tool):
+        available = tool.available(self.root_path)
+        body = widgets.section(parent, tool.name)
+
+        ctk.CTkLabel(
+            body,
+            text=(tool.quick_summary(self.root_path) if available
+                  else "Not found -- see the " + tool.name + " tab."),
+            font=theme.COMPACT_BOLD,
+            text_color=theme.TEXT_COLOR if available else theme.FAIL_COLOR,
+            anchor="w", justify="left",
+        ).grid(row=0, column=0, columnspan=2, sticky="w")
+
+        note = tool.quick_note() if available else ""
+        if note:
+            widgets.hint(body, note, 1, column=0, span=2)
+
+        buttons = ctk.CTkFrame(body, fg_color="transparent")
+        buttons.grid(row=2, column=0, sticky="w", pady=(4, 0))
+        start = widgets.action_button(
+            buttons, "Start", lambda t=tool: self.start_quick(t),
+            kind="start", width=110,
+        )
+        start.pack(side="left")
+        add = widgets.action_button(
+            buttons, "Add to queue", lambda t=tool: self.add_quick(t), width=130
+        )
+        add.pack(side="left", padx=(8, 0))
+        if not available:
+            start.configure(state="disabled")
+            add.configure(state="disabled")
 
     def _build_missing_panel(self, parent, tool):
         frame = ctk.CTkFrame(parent, fg_color=theme.BG_COLOR)
@@ -551,6 +648,27 @@ class StressApp:
             self._set_state(runner_module.BROKEN, str(error))
             return
         self.stop_button.configure(state="normal")
+
+    def quick_label(self, tool):
+        return tool.name + " -- " + tool.quick_preset_name(self.root_path)
+
+    def start_quick(self, tool):
+        """Run a tool's default configuration straight from the Quick Start page."""
+        self.start_single(tool, tool.quick_config(self.root_path),
+                          self.quick_label(tool))
+
+    def add_quick(self, tool):
+        self.add_to_queue(tool, tool.quick_config(self.root_path),
+                          self.quick_label(tool))
+
+    def queue_all_quick(self):
+        """Queue every available tool's default, in tab order."""
+        for tool in toolset.TOOLS:
+            if tool.available(self.root_path):
+                self.queue_steps.append((tool, tool.quick_config(self.root_path),
+                                         self.quick_label(tool)))
+        self.refresh_queue()
+        self.tabview.set("Queue")
 
     def add_to_queue(self, tool, config, label):
         self.queue_steps.append((tool, dict(config), label))

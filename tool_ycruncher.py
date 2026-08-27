@@ -63,6 +63,12 @@ class YCruncher(Tool):
                    "machine but under-stresses it."),
     )
 
+    quick_start = {
+        "preset": "All algorithms",
+        "values": {"duration": 60, "per_test": 60},
+        "note": "Every algorithm, one hour, memory sized to this machine.",
+    }
+
     presets = (
         Preset("All algorithms",
                {"algorithms": "", "per_test": 60},

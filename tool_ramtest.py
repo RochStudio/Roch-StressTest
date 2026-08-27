@@ -47,6 +47,12 @@ class RamTestPro(Tool):
               unit="min", hint="0 runs until you press Stop."),
     )
 
+    quick_start = {
+        "preset": "DDR4_DDR5_universal",
+        "values": {"duration": 0},
+        "note": "The modern-platform profile, no time limit.",
+    }
+
     _NOTES = {
         "DDR4_DDR5_universal": "The one to use on any modern platform.",
         "DDR3_DDR2_universal": "For older machines.",

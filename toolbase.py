@@ -99,8 +99,26 @@ class LaunchSpec:
         summary="",
         duration_seconds=0,
         creation_flags=0,
+        cmdline=None,
+        completion_patterns=(),
+        abort_patterns=(),
     ):
+        # Lines that mean the tool has finished its work, and lines that mean
+        # it stopped without finishing. Needed for any tool that does not exit
+        # when it is done: TestMem5 finishes its cycles, writes "Testing
+        # completed", and leaves its window open indefinitely. Waiting for the
+        # process to end would wait for ever, and a run with no time limit --
+        # which is the right way to run a fixed number of cycles -- would
+        # never be reported at all.
+        self.completion_patterns = list(completion_patterns)
+        self.abort_patterns = list(abort_patterns)
         self.argv = list(argv)
+        # A raw command line, used instead of argv when set. Needed for one
+        # tool only: TestMem5 takes `Config File="name.cfg"`, a parameter
+        # whose *name* contains a space, and no list of arguments survives
+        # being re-quoted into that shape. Everything else uses argv, which
+        # cannot be mangled by quoting rules.
+        self.cmdline = cmdline
         self.cwd = cwd
         self.env = env
         # True when the child writes to a pipe we can read. The windowed
@@ -134,6 +152,11 @@ class Tool:
     detection_note = ""
     fields = ()
     presets = ()
+    # The one configuration this tool should run when nobody has chosen
+    # anything: {"preset": name, "values": {...}, "note": "..."}. It is what
+    # the Quick Start page launches and what the tool's own tab opens on, so
+    # there is exactly one default per tool and both places agree on it.
+    quick_start = {}
 
     def locate(self, root):
         """Return the tool's executable under *root*, or None.
@@ -163,6 +186,63 @@ class Tool:
             if preset.name == name:
                 return preset
         return None
+
+    def all_presets(self, root):
+        """Static presets, or ones discovered from the tool's own folder."""
+        if hasattr(self, "presets_for"):
+            return self.presets_for(root)
+        return self.presets
+
+    def quick_preset_name(self, root):
+        """The preset the quick-start default is built on, if any."""
+        wanted = self.quick_start.get("preset")
+        names = [preset.name for preset in self.all_presets(root)]
+        if wanted in names:
+            return wanted
+        return names[0] if names else ""
+
+    def quick_config(self, root):
+        """The tool's default configuration, fully resolved.
+
+        Built from the field defaults, then the named preset, then the
+        quick-start overrides -- in that order, so an override always wins.
+        Machine-dependent figures are recomputed here rather than stored,
+        because a memory size that was right on the machine this was written
+        on is not a default, it is a guess.
+        """
+        config = self.defaults()
+        name = self.quick_preset_name(root)
+        for preset in self.all_presets(root):
+            if preset.name == name:
+                config.update(preset.values)
+                break
+        if hasattr(self, "suggested_memory") and name:
+            config["memory"] = self.suggested_memory(name)
+        config.update(self.quick_start.get("values", {}))
+        if hasattr(self, "apply_memory"):
+            self.apply_memory(config)
+        return config
+
+    def quick_note(self):
+        return self.quick_start.get("note", "")
+
+    def quick_summary(self, root):
+        """A one-line description of the default, with no side effects.
+
+        Deliberately not ``build(spec).summary``: building a spec writes
+        configuration files, and the Quick Start page describes five tools the
+        moment the window opens. Reaching for the real summary there would
+        rewrite Prime95's prime.txt and TM5's MT.cfg before anybody had
+        pressed anything.
+        """
+        config = self.quick_config(root)
+        parts = [self.quick_preset_name(root)]
+        cycles = int(config.get("cycles", 0) or 0)
+        if cycles:
+            parts.append(str(cycles) + " cycles")
+        duration = int(config.get("duration", 0) or 0)
+        parts.append(str(duration) + " min" if duration else "no time limit")
+        return "  |  ".join(part for part in parts if part)
 
     def build(self, config, root):
         """Turn configured values into a LaunchSpec. Implemented per tool."""

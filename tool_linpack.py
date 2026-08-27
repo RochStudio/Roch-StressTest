@@ -103,6 +103,12 @@ class Linpack(Tool):
               hint="Blank leaves the library to place threads itself."),
     )
 
+    quick_start = {
+        "preset": "4 GB",
+        "values": {"duration": 30},
+        "note": "4 GB problem, 30 minutes. Start here before the larger sizes.",
+    }
+
     # The memory figures Linpack Xtreme's own menu offers, so a run started
     # here is comparable with one started from that front-end.
     presets = (

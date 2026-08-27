@@ -36,7 +36,7 @@ for tool in toolset.TOOLS:
             assert exe_ok and cwd_ok, "exe %s cwd %s" % (exe_ok, cwd_ok)
             extra = ""
             if tool.key == "testmem5":
-                extra = " | cfg=" + os.path.basename(spec.argv[1])
+                extra = " | " + spec.cmdline.split("TM5.exe\" ")[-1]
             if tool.key == "linpack":
                 extra = " | n=%s" % cfg.get("problem_size")
             if tool.key == "prime95":
@@ -45,6 +45,25 @@ for tool in toolset.TOOLS:
         except Exception as e:
             fails += 1
             print("FAIL", tool.name.ljust(13), preset.name.ljust(28), repr(e))
+# The Quick Start page and each tool's own tab must agree on the default,
+# because they are advertised as the same thing.
+print()
+for tool in toolset.TOOLS:
+    panel = app.panels.get(tool.key)
+    if panel is None:
+        continue
+    panel.apply_quick_start()
+    root.update_idletasks()
+    quick = tool.quick_config(app.root_path)
+    tab = panel.config()
+    differs = {k: (quick.get(k), tab.get(k)) for k in quick
+               if k in tab and quick[k] != tab[k]}
+    if differs:
+        fails += 1
+        print("FAIL", tool.name.ljust(13), "tab disagrees with Quick Start:", differs)
+    else:
+        print("OK  ", tool.name.ljust(13), "default:", tool.quick_summary(app.root_path))
+
 root.destroy()
 print()
 print("failures:", fails)
