@@ -103,7 +103,19 @@ class LaunchSpec:
         completion_patterns=(),
         abort_patterns=(),
         leave_open=False,
+        on_started=None,
     ):
+        # Called once, on the runner's thread, just after the process starts.
+        # For the one tool that has no command line and no settings file, this
+        # is where its window gets filled in and its Start button pressed. It
+        # returns a line for the log, or raises -- and a run whose setup
+        # raised is never started, because a stress test with settings other
+        # than the ones asked for is worse than no test.
+        self.on_started = on_started
+        # Filled in by the runner just before on_started is called, so
+        # a setup step can recognise its own process among the
+        # windows on screen.
+        self.started_pid = None
         # Leave the tool on screen once it has finished by itself, instead of
         # killing it the moment the verdict is known. This is the whole point
         # of y-cruncher's pause:1 -- it holds its window open showing the
@@ -247,7 +259,11 @@ class Tool:
         parts = [self.quick_preset_name(root)]
         cycles = int(config.get("cycles", 0) or 0)
         if cycles:
-            parts.append(str(cycles) + " cycles")
+            parts.append(str(cycles) + (" cycles" if cycles != 1 else " cycle"))
+        errors_limit = int(config.get("max_errors", 0) or 0)
+        if errors_limit:
+            parts.append("stop at " + str(errors_limit) + " error"
+                         + ("s" if errors_limit != 1 else ""))
         duration = int(config.get("duration", 0) or 0)
         parts.append(str(duration) + " min" if duration else "no time limit")
         return "  |  ".join(part for part in parts if part)

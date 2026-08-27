@@ -236,7 +236,32 @@ class Runner:
 
     def _supervise(self):
         spec = self.spec
+
+        # The log baseline is taken first, before the tool is set up and
+        # before it has written anything for this run. Taken afterwards it
+        # skipped everything logged during startup -- including the block
+        # confirming the settings the tool actually accepted, which is the
+        # one line worth having.
         tails = [_FileTail(path) for path in spec.watch_files]
+
+        # Tools that have to be driven through their own window are set up
+        # here: on this thread, because waiting for a window to appear takes
+        # seconds and the UI thread must not be blocked for them. A setup
+        # that fails stops the run rather than letting it proceed with
+        # settings nobody chose.
+        if spec.on_started:
+            try:
+                # The adapter needs the process id to tell this tool's
+                # message boxes apart from every other program's.
+                spec.started_pid = self._process.pid
+                detail = spec.on_started()
+            except Exception as error:
+                kill_tree(self._process)
+                self._set_state(BROKEN,
+                                "Could not set the tool up: " + str(error))
+                return
+            if detail:
+                self._emit("output", line=detail)
         deadline = (
             self.started_at + spec.duration_seconds
             if spec.duration_seconds > 0

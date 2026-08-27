@@ -36,7 +36,7 @@ Administrator rights are asked for once at launch. TestMem5 and RAM Test Pro nee
 | **Prime95** | Smallest / Small / Large / Blend / Huge FFTs | `prime.txt` in a private work directory, then `prime95 -W<dir> -t` |
 | **y-cruncher** | All algorithms, Vector+FFT, VSTv3, in-cache, memory-heavy | `y-cruncher … stress -M -D -TL <algorithms>` |
 | **TestMem5** | every `.cfg` in `bin/`, anta777 profiles first | `Config File="name.cfg"`, cycle count rewritten |
-| **RAM Test Pro** | every `.cfg` in `config/` | `config/current_config.txt` |
+| **RAM Test Pro** | every `.cfg` in `config/` | `config/current_config.txt`, plus its window filled in |
 | **Linpack** | 2 / 4 / 6 / 8 / 14 / 30 GB | the raw Intel MKL binary with a generated input file |
 
 Memory figures are computed from what is actually free when you pick a preset, not from a constant. Linpack's problem size and leading dimension are derived from the memory box using Intel's own rule — the nearest odd multiple of 16 at or above the problem size on AVX parts.
@@ -47,10 +47,10 @@ What each tool runs from Quick Start, and what its own tab opens on:
 
 | Tool | Default |
 |---|---|
-| Prime95 | Smallest FFTs (4K–32K), 60 min |
+| Prime95 | Large FFTs (2048K–8192K), 30 min |
 | y-cruncher | VT3 (VSTv3) alone, 28 GB, 30 min |
 | TestMem5 | 1usmus v3 @ 1usmus, 25 cycles, no time limit |
-| RAM Test Pro | DDR4_DDR5_universal, no time limit |
+| RAM Test Pro | DDR4_DDR5_universal, 28 GB, threads auto, 1 cycle, stop on first error |
 | Linpack | 4 GB, 30 min |
 
 TM5's cycle count lives inside the `.cfg`, so overriding it means writing a copy. That copy goes to `bin/Roch active.cfg`, with only the `Cycles=` line changed and every other byte identical. The stock profiles are never edited: a cycle count set here is a property of the run, not of the profile.
@@ -65,7 +65,7 @@ The point of the program. What each tab claims is what it does:
 - **Linpack** additionally has every result row parsed. Linpack does *not* stop on a bad solve — it writes something other than `pass` in the eighth column and carries on — so that column is checked, and so is the residual, which must not drift between identical trials.
 - **Prime95** is watched through `results.txt`, which it writes on every error. A worker that fails while you are away is still caught.
 - **TestMem5** is read from `Log.txt`, which 0.13.1 appends beside `TM5.exe`. `Error in test #N`, a non-zero error total, and a crash blamed on the tested memory all stop the run. TM5's *own* failures — memory it could not allocate or lock — are deliberately not reported as instability, because TM5 says outright that they are not.
-- **RAM Test Pro** reports only in its own window and writes no log. A crash or early exit is caught; the on-screen counter cannot be. Leave that window visible.
+- **RAM Test Pro** is read from `logs/log.txt`: a non-zero `Test errors detected` and its own `ERROR` lines. `ERROR! Free up RAM…` is *it* failing rather than the memory, and is reported as a setup problem. Its settings are typed into its window and read back before Start is pressed, and if it refuses them — "Memory block size must be at least 50 MB" is the usual one — the run stops with that message instead of appearing to start.
 
 Every tool runs in its own visible window. The three that are windowed do that by themselves; the two console ones are given a console, which is why neither is piped: a child whose stdout is redirected leaves its own console blank. y-cruncher is watched through its `logfile:` instead, and Linpack — which has no log option, and whose pass/fail column exists nowhere but its output — is teed with PowerShell's `Tee-Object`. That writes UTF-16, so the log reader detects encoding from the byte-order mark. Turn the window off per tool with "Show ...'s window" and it goes back to a hidden console read straight off the pipe.
 

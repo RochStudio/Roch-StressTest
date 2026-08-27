@@ -1,0 +1,578 @@
+_____________________________________________________
+_________Starting Test | 2026-08-27 18:28:09_________
+
+| Test Settings |
+Threads: 16, Block Size: 100, Total Memory: 1600 MB
+Max Time: infinity, Max Errors Allowed: 1, WHEA errors detection: disabled
+Error Sound: enabled (beep)
+Memory Reallocation Every Cycle: enabled, Large Pages: disabled
+Total Physical Memory (RAM): 32037 MB
+Page File is enabled
+Current config file: DDR4_DDR5_universal.cfg
+Config path: C:\Users\AMD\Desktop\Roch StressTest\ram_test_pro_1.5.0\RAMTestPro1.5.0\config\DDR4_DDR5_universal.cfg
+Total tests found: 64
+Tests loaded: inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1) IOTest(100,4,0,1,10) mirrorMoveSSE(50,32,2,1) mirrorMove(100,0,4194200,1) IO2Test(100,8,11,1) mirrorMove(2,0,0,15,2) mirrorMove(2,0,0,1) mirrorMove(35,0,1024,1) mirrorMoveSSE(25,32,4194304,1) mirrorMove(40,0,768,1) mirrorMove(4,0,0,1) mirrorMove(40,0,2048,1) rPrTest(4,0,13,1) rPrTest(6,0,27,2) inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1) IOTest(1,0,19,5,60) mirrorMove(4,0,11,1) mirrorMoveSSE(100,64,128,1) prTest(2,0,43,1) mirrorMove(35,0,1568,1) inverseTestW(3,0,2,16) mirrorMoveSSE(100,64,512,1) inverseTest(5,0,768,0xFFBFAAFF12FFAFFF,1) IOTest(100,16,8,1,1) IOAVXTest(2,0,254,1,1) mirrorMove(2,0,67,20,2) inverseTestWN(3,0,4,8) mirrorMove(2,11,0,20,2) inverseTestMT(2,0,24,1) IOAVXTest(100,32,8,1,1) mirrorMove(2,0,3,64,1) IO2Test(100,16,30,1) mirrorMove(40,0,768,1) mirrorMoveSSE(5,0,1024,1) rPrTest(4,0,13,1) mirrorMove(3,0,0,1) inverseTest(5,0,1568,0xFFBFAAFF12FFAFFF,1) inverseTestW(3,0,4,2) inverseTest(10,0,1,0xFFFF00FF77FF70FF,1) rPrSSETest(3,0,1,1) mirrorMove(40,256,0,1) mirrorMove(5,0,1,1) mirrorMoveSSE(2,0,23,10,1) mirrorMove(40,0,1568,1) IO2Test(100,6,1,1) rPrSSETest(5,0,5,1) mirrorMove(2,0,54,1) inverseTestWN(3,0,8,2) inverseTestMT(3,0,111,3) mirrorMoveSSE(5,0,11,1) IOTest(100,128,2032,3,60) inverseTest(5,0,544,0xFFBFAAFF12FFAFFF,1) prTest(80,16,0,1) inverseTestW(3,0,4,6) mirrorMove(5,0,899,1) inverseTest(5,0,1,0x1FF1FFFF00FF0F1F,1) mirrorMove(10,32,99,1) IO2Test(5,0,19,1) mirrorMoveSSE(15,32,3333,1) mirrorMove(1,0,0,50,3) mirrorMove(5,0,0,1) mirrorMoveSSE(15,32,311,1) IO2Test(100,64,4,1) inverseTestMT(3,0,27,3)
+
+Optimized block size per thread: 88 MB
+
+Starting memory allocation...
+
+Total commited: 1408 MB.
+Memory locked for 16 threads, not locked for 0.
+[0] 88 MB allocated.
+[3] 88 MB allocated.
+[2] 88 MB allocated.
+[1] 88 MB allocated.
+[4] 88 MB allocated.
+[5] 88 MB allocated.
+[6] 88 MB allocated.
+[7] 88 MB allocated.
+[10] 88 MB allocated.
+[9] 88 MB allocated.
+[8] 88 MB allocated.
+[11] 88 MB allocated.
+[12] 88 MB allocated.
+[13] 88 MB allocated.
+[14] 88 MB allocated.
+[15] 88 MB allocated.
+
+[15] 18:28:10 | Test started
+
+Current Cycle 1
+[14] 18:28:10 | completed inverseTest(1,0,0), no errors, 1692.31 MB/s.
+[11] 18:28:10 | completed inverseTest(1,0,0), no errors, 1676.19 MB/s.
+[13] 18:28:10 | completed inverseTest(1,0,0), no errors, 1629.63 MB/s.
+[9] 18:28:10 | completed inverseTest(1,0,0), no errors, 1660.38 MB/s.
+[5] 18:28:10 | completed inverseTest(1,0,0), no errors, 1644.86 MB/s.
+[7] 18:28:10 | completed inverseTest(1,0,0), no errors, 1708.74 MB/s.
+[10] 18:28:10 | completed inverseTest(1,0,0), no errors, 1692.31 MB/s.
+[6] 18:28:10 | completed inverseTest(1,0,0), no errors, 1692.31 MB/s.
+[4] 18:28:10 | completed inverseTest(1,0,0), no errors, 1795.92 MB/s.
+[8] 18:28:10 | completed inverseTest(1,0,0), no errors, 1795.92 MB/s.
+[3] 18:28:10 | completed inverseTest(1,0,0), no errors, 1676.19 MB/s.
+[15] 18:28:10 | completed inverseTest(1,0,0), no errors, 1571.43 MB/s.
+[12] 18:28:10 | completed inverseTest(1,0,0), no errors, 1892.47 MB/s.
+[1] 18:28:10 | completed inverseTest(1,0,0), no errors, 1600.00 MB/s.
+[2] 18:28:10 | completed inverseTest(1,0,0), no errors, 1585.59 MB/s.
+[0] 18:28:10 | completed inverseTest(1,0,0), no errors, 1742.57 MB/s.
+[14] 18:28:10 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 375.00 MB/s.
+[15] 18:28:10 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 373.83 MB/s.
+[13] 18:28:10 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 364.74 MB/s.
+[11] 18:28:10 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 369.23 MB/s.
+[6] 18:28:10 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 370.37 MB/s.
+[7] 18:28:10 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 370.37 MB/s.
+[5] 18:28:10 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 368.10 MB/s.
+[9] 18:28:10 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 364.74 MB/s.
+[10] 18:28:10 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 364.74 MB/s.
+[12] 18:28:10 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 369.23 MB/s.
+[8] 18:28:10 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 356.08 MB/s.
+[4] 18:28:10 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 333.33 MB/s.
+[3] 18:28:10 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 330.58 MB/s.
+[0] 18:28:10 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 288.46 MB/s.
+[2] 18:28:10 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 279.07 MB/s.
+[1] 18:28:10 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 275.86 MB/s.
+[15] 18:28:13 | completed IOTest(100,4,0,1,10), no errors, 121.69 MB/s.
+[7] 18:28:14 | completed IOTest(100,4,0,1,10), no errors, 118.62 MB/s.
+[11] 18:28:14 | completed IOTest(100,4,0,1,10), no errors, 117.13 MB/s.
+[10] 18:28:14 | completed IOTest(100,4,0,1,10), no errors, 116.82 MB/s.
+[6] 18:28:14 | completed IOTest(100,4,0,1,10), no errors, 114.81 MB/s.
+[14] 18:28:14 | completed IOTest(100,4,0,1,10), no errors, 114.55 MB/s.
+[3] 18:28:14 | completed IOTest(100,4,0,1,10), no errors, 114.03 MB/s.
+[13] 18:28:14 | completed IOTest(100,4,0,1,10), no errors, 111.61 MB/s.
+[9] 18:28:14 | completed IOTest(100,4,0,1,10), no errors, 111.08 MB/s.
+[5] 18:28:14 | completed IOTest(100,4,0,1,10), no errors, 109.86 MB/s.
+[12] 18:28:14 | completed IOTest(100,4,0,1,10), no errors, 108.40 MB/s.
+[2] 18:28:14 | completed IOTest(100,4,0,1,10), no errors, 109.41 MB/s.
+[8] 18:28:14 | completed IOTest(100,4,0,1,10), no errors, 99.53 MB/s.
+[1] 18:28:14 | completed IOTest(100,4,0,1,10), no errors, 101.96 MB/s.
+[4] 18:28:14 | completed IOTest(100,4,0,1,10), no errors, 92.81 MB/s.
+[0] 18:28:15 | completed IOTest(100,4,0,1,10), no errors, 93.07 MB/s.
+[15] 18:28:46 | completed mirrorMoveSSE(50,32,2,1), no errors, 5524.03 MB/s.
+[14] 18:28:47 | completed mirrorMoveSSE(50,32,2,1), no errors, 5415.41 MB/s.
+[11] 18:28:48 | completed mirrorMoveSSE(50,32,2,1), no errors, 5336.67 MB/s.
+[10] 18:28:48 | completed mirrorMoveSSE(50,32,2,1), no errors, 5236.58 MB/s.
+[15] 18:28:50 | completed mirrorMove(100,0,4194200,1), no errors, 0.34 MB/s.
+[14] 18:28:50 | completed mirrorMove(100,0,4194200,1), no errors, 0.37 MB/s.
+[11] 18:28:51 | completed mirrorMove(100,0,4194200,1), no errors, 0.37 MB/s.
+[10] 18:28:51 | completed mirrorMove(100,0,4194200,1), no errors, 0.38 MB/s.
+[7] 18:28:52 | completed mirrorMoveSSE(50,32,2,1), no errors, 4725.60 MB/s.
+[6] 18:28:53 | completed mirrorMoveSSE(50,32,2,1), no errors, 4667.09 MB/s.
+[15] 18:28:54 | completed IO2Test(100,8,11,1), no errors, 2185.06 MB/s.
+[7] 18:28:55 | completed mirrorMove(100,0,4194200,1), no errors, 0.41 MB/s.
+[13] 18:28:55 | completed mirrorMoveSSE(50,32,2,1), no errors, 4441.84 MB/s.
+[5] 18:28:55 | completed mirrorMoveSSE(50,32,2,1), no errors, 4438.38 MB/s.
+[15] 18:28:55 | completed mirrorMove(2,0,0,15,2), no errors, 22393.62 MB/s.
+[14] 18:28:55 | completed IO2Test(100,8,11,1), no errors, 2177.12 MB/s.
+[6] 18:28:55 | completed mirrorMove(100,0,4194200,1), no errors, 0.43 MB/s.
+[11] 18:28:56 | completed IO2Test(100,8,11,1), no errors, 2178.88 MB/s.
+[14] 18:28:56 | completed mirrorMove(2,0,0,15,2), no errors, 14367.33 MB/s.
+[11] 18:28:56 | completed mirrorMove(2,0,0,15,2), no errors, 21999.98 MB/s.
+[9] 18:28:56 | completed mirrorMoveSSE(50,32,2,1), no errors, 4300.60 MB/s.
+[10] 18:28:56 | completed IO2Test(100,8,11,1), no errors, 2165.31 MB/s.
+[10] 18:28:57 | completed mirrorMove(2,0,0,15,2), no errors, 23034.74 MB/s.
+[13] 18:28:57 | completed mirrorMove(100,0,4194200,1), no errors, 0.39 MB/s.
+[5] 18:28:58 | completed mirrorMove(100,0,4194200,1), no errors, 0.38 MB/s.
+[12] 18:28:58 | completed mirrorMoveSSE(50,32,2,1), no errors, 4111.40 MB/s.
+[15] 18:28:59 | completed mirrorMove(2,0,0,1), no errors, 3111.60 MB/s.
+[9] 18:28:59 | completed mirrorMove(100,0,4194200,1), no errors, 0.38 MB/s.
+[14] 18:28:59 | completed mirrorMove(2,0,0,1), no errors, 3245.17 MB/s.
+[11] 18:28:59 | completed mirrorMove(2,0,0,1), no errors, 3314.89 MB/s.
+[7] 18:29:00 | completed IO2Test(100,8,11,1), no errors, 2102.38 MB/s.
+[15] 18:29:00 | completed mirrorMove(35,0,1024,1), no errors, 1249.43 MB/s.
+[10] 18:29:00 | completed mirrorMove(2,0,0,1), no errors, 3443.60 MB/s.
+[6] 18:29:00 | completed IO2Test(100,8,11,1), no errors, 2148.90 MB/s.
+[7] 18:29:00 | completed mirrorMove(2,0,0,15,2), no errors, 30361.16 MB/s.
+[15] 18:29:00 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.67 MB/s.
+[12] 18:29:00 | completed mirrorMove(100,0,4194200,1), no errors, 0.46 MB/s.
+[14] 18:29:00 | completed mirrorMove(35,0,1024,1), no errors, 1417.49 MB/s.
+[11] 18:29:01 | completed mirrorMove(35,0,1024,1), no errors, 1400.60 MB/s.
+[6] 18:29:01 | completed mirrorMove(2,0,0,15,2), no errors, 13251.75 MB/s.
+[14] 18:29:01 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.59 MB/s.
+[10] 18:29:01 | completed mirrorMove(35,0,1024,1), no errors, 1329.90 MB/s.
+[11] 18:29:01 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.59 MB/s.
+[8] 18:29:01 | completed mirrorMoveSSE(50,32,2,1), no errors, 3878.07 MB/s.
+[10] 18:29:02 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.62 MB/s.
+[15] 18:29:02 | completed mirrorMove(40,0,768,1), no errors, 1611.70 MB/s.
+[3] 18:29:02 | completed mirrorMoveSSE(50,32,2,1), no errors, 3738.31 MB/s.
+[11] 18:29:02 | completed mirrorMove(40,0,768,1), no errors, 1679.29 MB/s.
+[14] 18:29:03 | completed mirrorMove(40,0,768,1), no errors, 1594.00 MB/s.
+[13] 18:29:03 | completed IO2Test(100,8,11,1), no errors, 2016.63 MB/s.
+[10] 18:29:03 | completed mirrorMove(40,0,768,1), no errors, 1513.00 MB/s.
+[5] 18:29:03 | completed IO2Test(100,8,11,1), no errors, 1931.70 MB/s.
+[7] 18:29:03 | completed mirrorMove(2,0,0,1), no errors, 3594.13 MB/s.
+[13] 18:29:03 | completed mirrorMove(2,0,0,15,2), no errors, 17572.53 MB/s.
+[8] 18:29:04 | completed mirrorMove(100,0,4194200,1), no errors, 0.42 MB/s.
+[6] 18:29:04 | completed mirrorMove(2,0,0,1), no errors, 3527.72 MB/s.
+[5] 18:29:04 | completed mirrorMove(2,0,0,15,2), no errors, 10202.89 MB/s.
+[9] 18:29:04 | completed IO2Test(100,8,11,1), no errors, 1981.78 MB/s.
+[4] 18:29:05 | completed mirrorMoveSSE(50,32,2,1), no errors, 3617.30 MB/s.
+[7] 18:29:05 | completed mirrorMove(35,0,1024,1), no errors, 989.03 MB/s.
+[9] 18:29:05 | completed mirrorMove(2,0,0,15,2), no errors, 18931.07 MB/s.
+[7] 18:29:06 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.50 MB/s.
+[6] 18:29:06 | completed mirrorMove(35,0,1024,1), no errors, 1063.36 MB/s.
+[3] 18:29:06 | completed mirrorMove(100,0,4194200,1), no errors, 0.33 MB/s.
+[6] 18:29:06 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.49 MB/s.
+[12] 18:29:06 | completed IO2Test(100,8,11,1), no errors, 1786.66 MB/s.
+[13] 18:29:07 | completed mirrorMove(2,0,0,1), no errors, 2965.77 MB/s.
+[7] 18:29:07 | completed mirrorMove(40,0,768,1), no errors, 1238.65 MB/s.
+[12] 18:29:08 | completed mirrorMove(2,0,0,15,2), no errors, 8068.76 MB/s.
+[5] 18:29:08 | completed mirrorMove(2,0,0,1), no errors, 2874.20 MB/s.
+[6] 18:29:08 | completed mirrorMove(40,0,768,1), no errors, 1167.07 MB/s.
+[9] 18:29:09 | completed mirrorMove(2,0,0,1), no errors, 3082.65 MB/s.
+[4] 18:29:09 | completed mirrorMove(100,0,4194200,1), no errors, 0.28 MB/s.
+[13] 18:29:09 | completed mirrorMove(35,0,1024,1), no errors, 894.12 MB/s.
+[15] 18:29:09 | completed mirrorMove(4,0,0,1), no errors, 3094.51 MB/s.
+[2] 18:29:09 | completed mirrorMoveSSE(50,32,2,1), no errors, 3283.63 MB/s.
+[13] 18:29:10 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.52 MB/s.
+[5] 18:29:10 | completed mirrorMove(35,0,1024,1), no errors, 1103.29 MB/s.
+[11] 18:29:10 | completed mirrorMove(4,0,0,1), no errors, 3090.26 MB/s.
+[14] 18:29:10 | completed mirrorMove(4,0,0,1), no errors, 3069.63 MB/s.
+[9] 18:29:10 | completed mirrorMove(35,0,1024,1), no errors, 1179.96 MB/s.
+[1] 18:29:10 | completed mirrorMoveSSE(50,32,2,1), no errors, 3266.31 MB/s.
+[5] 18:29:10 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.69 MB/s.
+[15] 18:29:10 | completed mirrorMove(40,0,2048,1), no errors, 764.89 MB/s.
+[10] 18:29:10 | completed mirrorMove(4,0,0,1), no errors, 3157.39 MB/s.
+[9] 18:29:10 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.75 MB/s.
+[8] 18:29:10 | completed IO2Test(100,8,11,1), no errors, 1615.54 MB/s.
+[15] 18:29:10 | completed rPrTest(4,0,13,1), no errors, 1171.14 MB/s.
+[11] 18:29:11 | completed mirrorMove(40,0,2048,1), no errors, 910.24 MB/s.
+[8] 18:29:11 | completed mirrorMove(2,0,0,15,2), no errors, 30279.54 MB/s.
+[15] 18:29:11 | completed rPrTest(6,0,27,2), no errors, 735.89 MB/s.
+[13] 18:29:11 | completed mirrorMove(40,0,768,1), no errors, 1740.98 MB/s.
+[14] 18:29:11 | completed mirrorMove(40,0,2048,1), no errors, 808.64 MB/s.
+[11] 18:29:11 | completed rPrTest(4,0,13,1), no errors, 1031.50 MB/s.
+[15] 18:29:11 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 1409.41 MB/s.
+[14] 18:29:11 | completed rPrTest(4,0,13,1), no errors, 978.80 MB/s.
+[15] 18:29:11 | completed IOTest(1,0,19,5,60), no errors, 615.38 MB/s.
+[12] 18:29:11 | completed mirrorMove(2,0,0,1), no errors, 3340.45 MB/s.
+[11] 18:29:11 | completed rPrTest(6,0,27,2), no errors, 618.90 MB/s.
+[10] 18:29:11 | completed mirrorMove(40,0,2048,1), no errors, 742.85 MB/s.
+[5] 18:29:11 | completed mirrorMove(40,0,768,1), no errors, 1684.16 MB/s.
+[14] 18:29:12 | completed rPrTest(6,0,27,2), no errors, 565.27 MB/s.
+[2] 18:29:12 | completed mirrorMove(100,0,4194200,1), no errors, 0.44 MB/s.
+[11] 18:29:12 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 1206.51 MB/s.
+[10] 18:29:12 | completed rPrTest(4,0,13,1), no errors, 859.58 MB/s.
+[9] 18:29:12 | completed mirrorMove(40,0,768,1), no errors, 1475.52 MB/s.
+[11] 18:29:12 | completed IOTest(1,0,19,5,60), no errors, 692.91 MB/s.
+[3] 18:29:12 | completed IO2Test(100,8,11,1), no errors, 1683.42 MB/s.
+[14] 18:29:12 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 1136.40 MB/s.
+[14] 18:29:12 | completed IOTest(1,0,19,5,60), no errors, 417.06 MB/s.
+[10] 18:29:12 | completed rPrTest(6,0,27,2), no errors, 462.40 MB/s.
+[10] 18:29:13 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 938.67 MB/s.
+[12] 18:29:13 | completed mirrorMove(35,0,1024,1), no errors, 861.85 MB/s.
+[10] 18:29:13 | completed IOTest(1,0,19,5,60), no errors, 539.88 MB/s.
+[1] 18:29:13 | completed mirrorMove(100,0,4194200,1), no errors, 0.33 MB/s.
+[3] 18:29:14 | completed mirrorMove(2,0,0,15,2), no errors, 6680.90 MB/s.
+[12] 18:29:14 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.35 MB/s.
+[7] 18:29:14 | completed mirrorMove(4,0,0,1), no errors, 3183.72 MB/s.
+[8] 18:29:15 | completed mirrorMove(2,0,0,1), no errors, 2451.36 MB/s.
+[6] 18:29:15 | completed mirrorMove(4,0,0,1), no errors, 3144.17 MB/s.
+[7] 18:29:16 | completed mirrorMove(40,0,2048,1), no errors, 561.90 MB/s.
+[4] 18:29:16 | completed IO2Test(100,8,11,1), no errors, 1450.34 MB/s.
+[7] 18:29:16 | completed rPrTest(4,0,13,1), no errors, 734.77 MB/s.
+[12] 18:29:16 | completed mirrorMove(40,0,768,1), no errors, 944.09 MB/s.
+[7] 18:29:17 | completed rPrTest(6,0,27,2), no errors, 434.90 MB/s.
+[6] 18:29:17 | completed mirrorMove(40,0,2048,1), no errors, 532.86 MB/s.
+[8] 18:29:17 | completed mirrorMove(35,0,1024,1), no errors, 825.53 MB/s.
+[7] 18:29:18 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 892.27 MB/s.
+[6] 18:29:18 | completed rPrTest(4,0,13,1), no errors, 682.42 MB/s.
+[7] 18:29:18 | completed IOTest(1,0,19,5,60), no errors, 480.87 MB/s.
+[4] 18:29:18 | completed mirrorMove(2,0,0,15,2), no errors, 6065.69 MB/s.
+[6] 18:29:18 | completed rPrTest(6,0,27,2), no errors, 397.65 MB/s.
+[8] 18:29:18 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.32 MB/s.
+[3] 18:29:18 | completed mirrorMove(2,0,0,1), no errors, 2369.37 MB/s.
+[6] 18:29:19 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 888.89 MB/s.
+[6] 18:29:19 | completed IOTest(1,0,19,5,60), no errors, 520.71 MB/s.
+[13] 18:29:19 | completed mirrorMove(4,0,0,1), no errors, 2713.24 MB/s.
+[15] 18:29:20 | completed mirrorMove(4,0,11,1), no errors, 1092.42 MB/s.
+[5] 18:29:20 | completed mirrorMove(4,0,0,1), no errors, 2629.63 MB/s.
+[9] 18:29:20 | completed mirrorMove(4,0,0,1), no errors, 2643.82 MB/s.
+[3] 18:29:20 | completed mirrorMove(35,0,1024,1), no errors, 790.51 MB/s.
+[11] 18:29:21 | completed mirrorMove(4,0,11,1), no errors, 1089.53 MB/s.
+[13] 18:29:21 | completed mirrorMove(40,0,2048,1), no errors, 577.45 MB/s.
+[14] 18:29:21 | completed mirrorMove(4,0,11,1), no errors, 1105.79 MB/s.
+[8] 18:29:21 | completed mirrorMove(40,0,768,1), no errors, 861.13 MB/s.
+[13] 18:29:21 | completed rPrTest(4,0,13,1), no errors, 805.38 MB/s.
+[3] 18:29:21 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.48 MB/s.
+[2] 18:29:21 | completed IO2Test(100,8,11,1), no errors, 1126.44 MB/s.
+[5] 18:29:21 | completed mirrorMove(40,0,2048,1), no errors, 627.01 MB/s.
+[10] 18:29:22 | completed mirrorMove(4,0,11,1), no errors, 1109.41 MB/s.
+[13] 18:29:22 | completed rPrTest(6,0,27,2), no errors, 443.70 MB/s.
+[5] 18:29:22 | completed rPrTest(4,0,13,1), no errors, 646.24 MB/s.
+[9] 18:29:22 | completed mirrorMove(40,0,2048,1), no errors, 595.09 MB/s.
+[13] 18:29:22 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 878.90 MB/s.
+[9] 18:29:22 | completed rPrTest(4,0,13,1), no errors, 615.12 MB/s.
+[13] 18:29:22 | completed IOTest(1,0,19,5,60), no errors, 543.21 MB/s.
+[5] 18:29:23 | completed rPrTest(6,0,27,2), no errors, 381.31 MB/s.
+[0] 18:29:23 | completed mirrorMoveSSE(50,32,2,1), no errors, 2675.04 MB/s.
+[9] 18:29:23 | completed rPrTest(6,0,27,2), no errors, 380.11 MB/s.
+[5] 18:29:23 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 913.10 MB/s.
+[5] 18:29:23 | completed IOTest(1,0,19,5,60), no errors, 526.95 MB/s.
+[4] 18:29:23 | completed mirrorMove(2,0,0,1), no errors, 2115.31 MB/s.
+[9] 18:29:23 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 942.44 MB/s.
+[2] 18:29:24 | completed mirrorMove(2,0,0,15,2), no errors, 5176.47 MB/s.
+[9] 18:29:24 | completed IOTest(1,0,19,5,60), no errors, 602.74 MB/s.
+[1] 18:29:24 | completed IO2Test(100,8,11,1), no errors, 985.00 MB/s.
+[3] 18:29:25 | completed mirrorMove(40,0,768,1), no errors, 654.40 MB/s.
+[12] 18:29:26 | completed mirrorMove(4,0,0,1), no errors, 2276.94 MB/s.
+[1] 18:29:27 | completed mirrorMove(2,0,0,15,2), no errors, 4633.48 MB/s.
+[7] 18:29:27 | completed mirrorMove(4,0,11,1), no errors, 1027.46 MB/s.
+[4] 18:29:27 | completed mirrorMove(35,0,1024,1), no errors, 414.44 MB/s.
+[6] 18:29:28 | completed mirrorMove(4,0,11,1), no errors, 1032.60 MB/s.
+[4] 18:29:28 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.28 MB/s.
+[12] 18:29:28 | completed mirrorMove(40,0,2048,1), no errors, 417.01 MB/s.
+[12] 18:29:29 | completed rPrTest(4,0,13,1), no errors, 532.12 MB/s.
+[0] 18:29:29 | completed mirrorMove(100,0,4194200,1), no errors, 0.16 MB/s.
+[12] 18:29:30 | completed rPrTest(6,0,27,2), no errors, 317.18 MB/s.
+[2] 18:29:30 | completed mirrorMove(2,0,0,1), no errors, 1716.29 MB/s.
+[12] 18:29:30 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 750.93 MB/s.
+[12] 18:29:31 | completed IOTest(1,0,19,5,60), no errors, 379.31 MB/s.
+[13] 18:29:32 | completed mirrorMove(4,0,11,1), no errors, 967.61 MB/s.
+[8] 18:29:32 | completed mirrorMove(4,0,0,1), no errors, 2002.84 MB/s.
+[5] 18:29:32 | completed mirrorMove(4,0,11,1), no errors, 1035.42 MB/s.
+[1] 18:29:33 | completed mirrorMove(2,0,0,1), no errors, 1680.44 MB/s.
+[9] 18:29:33 | completed mirrorMove(4,0,11,1), no errors, 971.28 MB/s.
+[2] 18:29:33 | completed mirrorMove(35,0,1024,1), no errors, 453.03 MB/s.
+[4] 18:29:34 | completed mirrorMove(40,0,768,1), no errors, 404.26 MB/s.
+[8] 18:29:34 | completed mirrorMove(40,0,2048,1), no errors, 443.83 MB/s.
+[2] 18:29:34 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.34 MB/s.
+[8] 18:29:35 | completed rPrTest(4,0,13,1), no errors, 678.96 MB/s.
+[8] 18:29:35 | completed rPrTest(6,0,27,2), no errors, 378.32 MB/s.
+[3] 18:29:35 | completed mirrorMove(4,0,0,1), no errors, 2134.55 MB/s.
+[8] 18:29:36 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 922.07 MB/s.
+[1] 18:29:36 | completed mirrorMove(35,0,1024,1), no errors, 596.43 MB/s.
+[8] 18:29:36 | completed IOTest(1,0,19,5,60), no errors, 871.29 MB/s.
+[1] 18:29:37 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.32 MB/s.
+[3] 18:29:37 | completed mirrorMove(40,0,2048,1), no errors, 489.97 MB/s.
+[3] 18:29:37 | completed rPrTest(4,0,13,1), no errors, 641.60 MB/s.
+[3] 18:29:38 | completed rPrTest(6,0,27,2), no errors, 352.37 MB/s.
+[3] 18:29:39 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 780.92 MB/s.
+[3] 18:29:39 | completed IOTest(1,0,19,5,60), no errors, 687.50 MB/s.
+[2] 18:29:39 | completed mirrorMove(40,0,768,1), no errors, 464.31 MB/s.
+[12] 18:29:40 | completed mirrorMove(4,0,11,1), no errors, 1066.50 MB/s.
+[1] 18:29:42 | completed mirrorMove(40,0,768,1), no errors, 489.45 MB/s.
+[0] 18:29:43 | completed IO2Test(100,8,11,1), no errors, 811.48 MB/s.
+[4] 18:29:44 | completed mirrorMove(4,0,0,1), no errors, 2206.46 MB/s.
+[8] 18:29:45 | completed mirrorMove(4,0,11,1), no errors, 1000.47 MB/s.
+[0] 18:29:46 | completed mirrorMove(2,0,0,15,2), no errors, 3247.98 MB/s.
+[4] 18:29:46 | completed mirrorMove(40,0,2048,1), no errors, 412.11 MB/s.
+[4] 18:29:47 | completed rPrTest(4,0,13,1), no errors, 512.79 MB/s.
+[4] 18:29:48 | completed rPrTest(6,0,27,2), no errors, 313.88 MB/s.
+[4] 18:29:48 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 719.84 MB/s.
+[4] 18:29:48 | completed IOTest(1,0,19,5,60), no errors, 709.68 MB/s.
+[3] 18:29:51 | completed mirrorMove(4,0,11,1), no errors, 782.05 MB/s.
+[2] 18:29:55 | completed mirrorMove(4,0,0,1), no errors, 1446.79 MB/s.
+[0] 18:29:56 | completed mirrorMove(2,0,0,1), no errors, 1103.02 MB/s.
+[1] 18:29:57 | completed mirrorMove(4,0,0,1), no errors, 1487.29 MB/s.
+[2] 18:29:57 | completed mirrorMove(40,0,2048,1), no errors, 359.10 MB/s.
+[2] 18:29:58 | completed rPrTest(4,0,13,1), no errors, 558.73 MB/s.
+[2] 18:29:59 | completed rPrTest(6,0,27,2), no errors, 335.70 MB/s.
+[1] 18:29:59 | completed mirrorMove(40,0,2048,1), no errors, 349.23 MB/s.
+[4] 18:29:59 | completed mirrorMove(4,0,11,1), no errors, 858.72 MB/s.
+[2] 18:29:59 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 632.52 MB/s.
+[2] 18:30:00 | completed IOTest(1,0,19,5,60), no errors, 671.76 MB/s.
+[1] 18:30:00 | completed rPrTest(4,0,13,1), no errors, 401.48 MB/s.
+[1] 18:30:01 | completed rPrTest(6,0,27,2), no errors, 269.99 MB/s.
+[0] 18:30:01 | completed mirrorMove(35,0,1024,1), no errors, 336.13 MB/s.
+[1] 18:30:02 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 568.89 MB/s.
+[1] 18:30:02 | completed IOTest(1,0,19,5,60), no errors, 318.84 MB/s.
+[0] 18:30:02 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.22 MB/s.
+[2] 18:30:12 | completed mirrorMove(4,0,11,1), no errors, 738.17 MB/s.
+[1] 18:30:16 | completed mirrorMove(4,0,11,1), no errors, 686.95 MB/s.
+
+Test stopped unexpectedly!
+
+Test stopped due to unexpected termination at 2026-08-27 18:30:17
+Elapsed Time: 00:02:06
+Test errors detected: 0
+_____________________________________________________
+
+_____________________________________________________
+_________Starting Test | 2026-08-27 18:31:07_________
+
+| Test Settings |
+Threads: 16, Block Size: 100, Total Memory: 1600 MB
+Max Time: infinity, Max Errors Allowed: 1, WHEA errors detection: disabled
+Error Sound: enabled (beep)
+Memory Reallocation Every Cycle: enabled, Large Pages: disabled
+Total Physical Memory (RAM): 32037 MB
+Page File is enabled
+Current config file: DDR4_DDR5_universal.cfg
+Config path: C:\Users\AMD\Desktop\Roch StressTest\ram_test_pro_1.5.0\RAMTestPro1.5.0\config\DDR4_DDR5_universal.cfg
+Total tests found: 64
+Tests loaded: inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1) IOTest(100,4,0,1,10) mirrorMoveSSE(50,32,2,1) mirrorMove(100,0,4194200,1) IO2Test(100,8,11,1) mirrorMove(2,0,0,15,2) mirrorMove(2,0,0,1) mirrorMove(35,0,1024,1) mirrorMoveSSE(25,32,4194304,1) mirrorMove(40,0,768,1) mirrorMove(4,0,0,1) mirrorMove(40,0,2048,1) rPrTest(4,0,13,1) rPrTest(6,0,27,2) inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1) IOTest(1,0,19,5,60) mirrorMove(4,0,11,1) mirrorMoveSSE(100,64,128,1) prTest(2,0,43,1) mirrorMove(35,0,1568,1) inverseTestW(3,0,2,16) mirrorMoveSSE(100,64,512,1) inverseTest(5,0,768,0xFFBFAAFF12FFAFFF,1) IOTest(100,16,8,1,1) IOAVXTest(2,0,254,1,1) mirrorMove(2,0,67,20,2) inverseTestWN(3,0,4,8) mirrorMove(2,11,0,20,2) inverseTestMT(2,0,24,1) IOAVXTest(100,32,8,1,1) mirrorMove(2,0,3,64,1) IO2Test(100,16,30,1) mirrorMove(40,0,768,1) mirrorMoveSSE(5,0,1024,1) rPrTest(4,0,13,1) mirrorMove(3,0,0,1) inverseTest(5,0,1568,0xFFBFAAFF12FFAFFF,1) inverseTestW(3,0,4,2) inverseTest(10,0,1,0xFFFF00FF77FF70FF,1) rPrSSETest(3,0,1,1) mirrorMove(40,256,0,1) mirrorMove(5,0,1,1) mirrorMoveSSE(2,0,23,10,1) mirrorMove(40,0,1568,1) IO2Test(100,6,1,1) rPrSSETest(5,0,5,1) mirrorMove(2,0,54,1) inverseTestWN(3,0,8,2) inverseTestMT(3,0,111,3) mirrorMoveSSE(5,0,11,1) IOTest(100,128,2032,3,60) inverseTest(5,0,544,0xFFBFAAFF12FFAFFF,1) prTest(80,16,0,1) inverseTestW(3,0,4,6) mirrorMove(5,0,899,1) inverseTest(5,0,1,0x1FF1FFFF00FF0F1F,1) mirrorMove(10,32,99,1) IO2Test(5,0,19,1) mirrorMoveSSE(15,32,3333,1) mirrorMove(1,0,0,50,3) mirrorMove(5,0,0,1) mirrorMoveSSE(15,32,311,1) IO2Test(100,64,4,1) inverseTestMT(3,0,27,3)
+
+Optimized block size per thread: 88 MB
+
+Starting memory allocation...
+
+Total commited: 1408 MB.
+Memory locked for 16 threads, not locked for 0.
+[0] 88 MB allocated.
+[4] 88 MB allocated.
+[2] 88 MB allocated.
+[3] 88 MB allocated.
+[1] 88 MB allocated.
+[5] 88 MB allocated.
+[6] 88 MB allocated.
+[7] 88 MB allocated.
+[8] 88 MB allocated.
+[9] 88 MB allocated.
+[10] 88 MB allocated.
+[11] 88 MB allocated.
+[12] 88 MB allocated.
+[13] 88 MB allocated.
+[14] 88 MB allocated.
+[15] 88 MB allocated.
+
+[15] 18:31:07 | Test started
+
+Current Cycle 1
+[15] 18:31:07 | completed inverseTest(1,0,0), no errors, 1660.38 MB/s.
+[14] 18:31:07 | completed inverseTest(1,0,0), no errors, 1660.38 MB/s.
+[5] 18:31:07 | completed inverseTest(1,0,0), no errors, 1629.63 MB/s.
+[11] 18:31:07 | completed inverseTest(1,0,0), no errors, 1644.86 MB/s.
+[13] 18:31:07 | completed inverseTest(1,0,0), no errors, 1614.68 MB/s.
+[7] 18:31:07 | completed inverseTest(1,0,0), no errors, 1644.86 MB/s.
+[9] 18:31:07 | completed inverseTest(1,0,0), no errors, 1614.68 MB/s.
+[6] 18:31:07 | completed inverseTest(1,0,0), no errors, 1660.38 MB/s.
+[10] 18:31:07 | completed inverseTest(1,0,0), no errors, 1660.38 MB/s.
+[4] 18:31:07 | completed inverseTest(1,0,0), no errors, 1692.31 MB/s.
+[8] 18:31:07 | completed inverseTest(1,0,0), no errors, 1760.00 MB/s.
+[12] 18:31:07 | completed inverseTest(1,0,0), no errors, 1872.34 MB/s.
+[3] 18:31:07 | completed inverseTest(1,0,0), no errors, 1614.68 MB/s.
+[1] 18:31:07 | completed inverseTest(1,0,0), no errors, 1676.19 MB/s.
+[2] 18:31:07 | completed inverseTest(1,0,0), no errors, 1571.43 MB/s.
+[0] 18:31:07 | completed inverseTest(1,0,0), no errors, 1934.07 MB/s.
+[14] 18:31:08 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 380.95 MB/s.
+[15] 18:31:08 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 378.55 MB/s.
+[13] 18:31:08 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 371.52 MB/s.
+[10] 18:31:08 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 376.18 MB/s.
+[7] 18:31:08 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 372.67 MB/s.
+[5] 18:31:08 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 371.52 MB/s.
+[6] 18:31:08 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 375.00 MB/s.
+[11] 18:31:08 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 365.85 MB/s.
+[9] 18:31:08 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 364.74 MB/s.
+[12] 18:31:08 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 366.97 MB/s.
+[4] 18:31:08 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 337.08 MB/s.
+[8] 18:31:08 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 334.26 MB/s.
+[2] 18:31:08 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 320.00 MB/s.
+[3] 18:31:08 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 322.58 MB/s.
+[1] 18:31:08 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 300.00 MB/s.
+[0] 18:31:08 | completed inverseTest(15,4,0,0xFFBFAAFF12FFAFFF,1), no errors, 221.81 MB/s.
+[15] 18:31:11 | completed IOTest(100,4,0,1,10), no errors, 127.02 MB/s.
+[7] 18:31:11 | completed IOTest(100,4,0,1,10), no errors, 125.83 MB/s.
+[11] 18:31:11 | completed IOTest(100,4,0,1,10), no errors, 124.61 MB/s.
+[10] 18:31:11 | completed IOTest(100,4,0,1,10), no errors, 122.21 MB/s.
+[6] 18:31:11 | completed IOTest(100,4,0,1,10), no errors, 122.14 MB/s.
+[14] 18:31:11 | completed IOTest(100,4,0,1,10), no errors, 121.21 MB/s.
+[3] 18:31:11 | completed IOTest(100,4,0,1,10), no errors, 120.12 MB/s.
+[13] 18:31:11 | completed IOTest(100,4,0,1,10), no errors, 115.41 MB/s.
+[12] 18:31:11 | completed IOTest(100,4,0,1,10), no errors, 113.86 MB/s.
+[9] 18:31:11 | completed IOTest(100,4,0,1,10), no errors, 113.35 MB/s.
+[2] 18:31:11 | completed IOTest(100,4,0,1,10), no errors, 113.99 MB/s.
+[5] 18:31:11 | completed IOTest(100,4,0,1,10), no errors, 109.44 MB/s.
+[1] 18:31:12 | completed IOTest(100,4,0,1,10), no errors, 104.74 MB/s.
+[8] 18:31:12 | completed IOTest(100,4,0,1,10), no errors, 101.11 MB/s.
+[4] 18:31:12 | completed IOTest(100,4,0,1,10), no errors, 94.36 MB/s.
+[0] 18:31:13 | completed IOTest(100,4,0,1,10), no errors, 73.23 MB/s.
+[11] 18:31:36 | completed mirrorMoveSSE(50,32,2,1), no errors, 7120.85 MB/s.
+[10] 18:31:37 | completed mirrorMoveSSE(50,32,2,1), no errors, 7059.27 MB/s.
+[11] 18:31:40 | completed mirrorMove(100,0,4194200,1), no errors, 0.34 MB/s.
+[10] 18:31:40 | completed mirrorMove(100,0,4194200,1), no errors, 0.33 MB/s.
+[11] 18:31:46 | completed IO2Test(100,8,11,1), no errors, 1752.10 MB/s.
+[10] 18:31:46 | completed IO2Test(100,8,11,1), no errors, 1766.17 MB/s.
+[11] 18:31:46 | completed mirrorMove(2,0,0,15,2), no errors, 20936.78 MB/s.
+[15] 18:31:46 | completed mirrorMoveSSE(50,32,2,1), no errors, 5117.63 MB/s.
+[10] 18:31:47 | completed mirrorMove(2,0,0,15,2), no errors, 11770.10 MB/s.
+[14] 18:31:47 | completed mirrorMoveSSE(50,32,2,1), no errors, 5034.14 MB/s.
+[15] 18:31:50 | completed mirrorMove(100,0,4194200,1), no errors, 0.32 MB/s.
+[7] 18:31:50 | completed mirrorMoveSSE(50,32,2,1), no errors, 4609.77 MB/s.
+[14] 18:31:50 | completed mirrorMove(100,0,4194200,1), no errors, 0.32 MB/s.
+[11] 18:31:51 | completed mirrorMove(2,0,0,1), no errors, 2631.78 MB/s.
+[6] 18:31:51 | completed mirrorMoveSSE(50,32,2,1), no errors, 4522.96 MB/s.
+[10] 18:31:51 | completed mirrorMove(2,0,0,1), no errors, 2676.17 MB/s.
+[11] 18:31:52 | completed mirrorMove(35,0,1024,1), no errors, 1113.74 MB/s.
+[10] 18:31:52 | completed mirrorMove(35,0,1024,1), no errors, 1243.33 MB/s.
+[11] 18:31:53 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.56 MB/s.
+[9] 18:31:53 | completed mirrorMoveSSE(50,32,2,1), no errors, 4396.68 MB/s.
+[5] 18:31:53 | completed mirrorMoveSSE(50,32,2,1), no errors, 4387.99 MB/s.
+[13] 18:31:53 | completed mirrorMoveSSE(50,32,2,1), no errors, 4356.69 MB/s.
+[7] 18:31:53 | completed mirrorMove(100,0,4194200,1), no errors, 0.41 MB/s.
+[10] 18:31:53 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.60 MB/s.
+[6] 18:31:53 | completed mirrorMove(100,0,4194200,1), no errors, 0.47 MB/s.
+[11] 18:31:54 | completed mirrorMove(40,0,768,1), no errors, 1719.07 MB/s.
+[15] 18:31:54 | completed IO2Test(100,8,11,1), no errors, 2281.25 MB/s.
+[10] 18:31:54 | completed mirrorMove(40,0,768,1), no errors, 1620.70 MB/s.
+[15] 18:31:55 | completed mirrorMove(2,0,0,15,2), no errors, 30775.93 MB/s.
+[9] 18:31:55 | completed mirrorMove(100,0,4194200,1), no errors, 0.48 MB/s.
+[14] 18:31:55 | completed IO2Test(100,8,11,1), no errors, 2391.59 MB/s.
+[5] 18:31:55 | completed mirrorMove(100,0,4194200,1), no errors, 0.47 MB/s.
+[13] 18:31:55 | completed mirrorMove(100,0,4194200,1), no errors, 0.46 MB/s.
+[14] 18:31:56 | completed mirrorMove(2,0,0,15,2), no errors, 13441.51 MB/s.
+[12] 18:31:56 | completed mirrorMoveSSE(50,32,2,1), no errors, 4021.39 MB/s.
+[8] 18:31:58 | completed mirrorMoveSSE(50,32,2,1), no errors, 3940.95 MB/s.
+[7] 18:31:58 | completed IO2Test(100,8,11,1), no errors, 2192.62 MB/s.
+[7] 18:31:58 | completed mirrorMove(2,0,0,15,2), no errors, 23417.86 MB/s.
+[15] 18:31:58 | completed mirrorMove(2,0,0,1), no errors, 3077.60 MB/s.
+[6] 18:31:58 | completed IO2Test(100,8,11,1), no errors, 2167.92 MB/s.
+[12] 18:31:59 | completed mirrorMove(100,0,4194200,1), no errors, 0.40 MB/s.
+[14] 18:31:59 | completed mirrorMove(2,0,0,1), no errors, 3178.33 MB/s.
+[6] 18:31:59 | completed mirrorMove(2,0,0,15,2), no errors, 11588.47 MB/s.
+[15] 18:32:00 | completed mirrorMove(35,0,1024,1), no errors, 1108.89 MB/s.
+[15] 18:32:00 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.55 MB/s.
+[4] 18:32:00 | completed mirrorMoveSSE(50,32,2,1), no errors, 3752.64 MB/s.
+[8] 18:32:00 | completed mirrorMove(100,0,4194200,1), no errors, 0.41 MB/s.
+[14] 18:32:01 | completed mirrorMove(35,0,1024,1), no errors, 1190.07 MB/s.
+[11] 18:32:01 | completed mirrorMove(4,0,0,1), no errors, 3345.41 MB/s.
+[9] 18:32:01 | completed IO2Test(100,8,11,1), no errors, 1752.10 MB/s.
+[13] 18:32:01 | completed IO2Test(100,8,11,1), no errors, 1843.18 MB/s.
+[14] 18:32:01 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.64 MB/s.
+[5] 18:32:01 | completed IO2Test(100,8,11,1), no errors, 1780.75 MB/s.
+[10] 18:32:01 | completed mirrorMove(4,0,0,1), no errors, 3341.44 MB/s.
+[3] 18:32:01 | completed mirrorMoveSSE(50,32,2,1), no errors, 3626.24 MB/s.
+[9] 18:32:01 | completed mirrorMove(2,0,0,15,2), no errors, 29957.42 MB/s.
+[7] 18:32:02 | completed mirrorMove(2,0,0,1), no errors, 3445.70 MB/s.
+[13] 18:32:02 | completed mirrorMove(2,0,0,15,2), no errors, 19830.97 MB/s.
+[11] 18:32:02 | completed mirrorMove(40,0,2048,1), no errors, 806.41 MB/s.
+[15] 18:32:02 | completed mirrorMove(40,0,768,1), no errors, 1667.24 MB/s.
+[5] 18:32:02 | completed mirrorMove(2,0,0,15,2), no errors, 15622.73 MB/s.
+[11] 18:32:02 | completed rPrTest(4,0,13,1), no errors, 982.38 MB/s.
+[10] 18:32:02 | completed mirrorMove(40,0,2048,1), no errors, 675.84 MB/s.
+[6] 18:32:02 | completed mirrorMove(2,0,0,1), no errors, 3685.86 MB/s.
+[11] 18:32:02 | completed rPrTest(6,0,27,2), no errors, 529.32 MB/s.
+[14] 18:32:03 | completed mirrorMove(40,0,768,1), no errors, 1470.84 MB/s.
+[10] 18:32:03 | completed rPrTest(4,0,13,1), no errors, 906.05 MB/s.
+[11] 18:32:03 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 1106.92 MB/s.
+[7] 18:32:03 | completed mirrorMove(35,0,1024,1), no errors, 1159.37 MB/s.
+[11] 18:32:03 | completed IOTest(1,0,19,5,60), no errors, 602.74 MB/s.
+[10] 18:32:03 | completed rPrTest(6,0,27,2), no errors, 513.56 MB/s.
+[4] 18:32:03 | completed mirrorMove(100,0,4194200,1), no errors, 0.37 MB/s.
+[7] 18:32:04 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.49 MB/s.
+[10] 18:32:04 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 1147.51 MB/s.
+[10] 18:32:04 | completed IOTest(1,0,19,5,60), no errors, 514.62 MB/s.
+[6] 18:32:04 | completed mirrorMove(35,0,1024,1), no errors, 1068.57 MB/s.
+[3] 18:32:04 | completed mirrorMove(100,0,4194200,1), no errors, 0.34 MB/s.
+[6] 18:32:05 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.50 MB/s.
+[9] 18:32:05 | completed mirrorMove(2,0,0,1), no errors, 3441.49 MB/s.
+[13] 18:32:05 | completed mirrorMove(2,0,0,1), no errors, 3357.38 MB/s.
+[12] 18:32:05 | completed IO2Test(100,8,11,1), no errors, 1798.58 MB/s.
+[5] 18:32:05 | completed mirrorMove(2,0,0,1), no errors, 3265.87 MB/s.
+[7] 18:32:05 | completed mirrorMove(40,0,768,1), no errors, 1315.84 MB/s.
+[9] 18:32:06 | completed mirrorMove(35,0,1024,1), no errors, 1154.12 MB/s.
+[1] 18:32:06 | completed mirrorMoveSSE(50,32,2,1), no errors, 3328.72 MB/s.
+[6] 18:32:06 | completed mirrorMove(40,0,768,1), no errors, 1382.42 MB/s.
+[12] 18:32:06 | completed mirrorMove(2,0,0,15,2), no errors, 9025.63 MB/s.
+[2] 18:32:07 | completed mirrorMoveSSE(50,32,2,1), no errors, 3290.16 MB/s.
+[13] 18:32:07 | completed mirrorMove(35,0,1024,1), no errors, 972.66 MB/s.
+[8] 18:32:07 | completed IO2Test(100,8,11,1), no errors, 1763.85 MB/s.
+[9] 18:32:07 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.54 MB/s.
+[5] 18:32:07 | completed mirrorMove(35,0,1024,1), no errors, 1148.91 MB/s.
+[13] 18:32:07 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.53 MB/s.
+[8] 18:32:07 | completed mirrorMove(2,0,0,15,2), no errors, 17627.53 MB/s.
+[5] 18:32:07 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.56 MB/s.
+[9] 18:32:08 | completed mirrorMove(40,0,768,1), no errors, 1310.64 MB/s.
+[15] 18:32:09 | completed mirrorMove(4,0,0,1), no errors, 3310.99 MB/s.
+[13] 18:32:09 | completed mirrorMove(40,0,768,1), no errors, 1279.59 MB/s.
+[5] 18:32:09 | completed mirrorMove(40,0,768,1), no errors, 1301.10 MB/s.
+[14] 18:32:10 | completed mirrorMove(4,0,0,1), no errors, 3207.75 MB/s.
+[2] 18:32:10 | completed mirrorMove(100,0,4194200,1), no errors, 0.33 MB/s.
+[15] 18:32:10 | completed mirrorMove(40,0,2048,1), no errors, 607.88 MB/s.
+[1] 18:32:10 | completed mirrorMove(100,0,4194200,1), no errors, 0.28 MB/s.
+[12] 18:32:10 | completed mirrorMove(2,0,0,1), no errors, 2831.57 MB/s.
+[11] 18:32:10 | completed mirrorMove(4,0,11,1), no errors, 1291.95 MB/s.
+[15] 18:32:10 | completed rPrTest(4,0,13,1), no errors, 749.14 MB/s.
+[4] 18:32:11 | completed IO2Test(100,8,11,1), no errors, 1491.27 MB/s.
+[15] 18:32:11 | completed rPrTest(6,0,27,2), no errors, 461.51 MB/s.
+[10] 18:32:11 | completed mirrorMove(4,0,11,1), no errors, 1290.54 MB/s.
+[3] 18:32:11 | completed IO2Test(100,8,11,1), no errors, 1561.71 MB/s.
+[8] 18:32:11 | completed mirrorMove(2,0,0,1), no errors, 2722.75 MB/s.
+[14] 18:32:11 | completed mirrorMove(40,0,2048,1), no errors, 536.78 MB/s.
+[15] 18:32:11 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 1052.32 MB/s.
+[15] 18:32:12 | completed IOTest(1,0,19,5,60), no errors, 460.73 MB/s.
+[14] 18:32:12 | completed rPrTest(4,0,13,1), no errors, 707.63 MB/s.
+[4] 18:32:12 | completed mirrorMove(2,0,0,15,2), no errors, 6910.42 MB/s.
+[12] 18:32:12 | completed mirrorMove(35,0,1024,1), no errors, 789.69 MB/s.
+[14] 18:32:12 | completed rPrTest(6,0,27,2), no errors, 409.10 MB/s.
+[3] 18:32:13 | completed mirrorMove(2,0,0,15,2), no errors, 9076.54 MB/s.
+[14] 18:32:13 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 979.82 MB/s.
+[7] 18:32:13 | completed mirrorMove(4,0,0,1), no errors, 3007.74 MB/s.
+[14] 18:32:13 | completed IOTest(1,0,19,5,60), no errors, 508.67 MB/s.
+[12] 18:32:13 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.38 MB/s.
+[8] 18:32:13 | completed mirrorMove(35,0,1024,1), no errors, 764.03 MB/s.
+[6] 18:32:14 | completed mirrorMove(4,0,0,1), no errors, 2939.46 MB/s.
+[8] 18:32:14 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.38 MB/s.
+[7] 18:32:14 | completed mirrorMove(40,0,2048,1), no errors, 553.73 MB/s.
+[7] 18:32:15 | completed rPrTest(4,0,13,1), no errors, 715.17 MB/s.
+[7] 18:32:15 | completed rPrTest(6,0,27,2), no errors, 437.27 MB/s.
+[6] 18:32:16 | completed mirrorMove(40,0,2048,1), no errors, 521.45 MB/s.
+[12] 18:32:16 | completed mirrorMove(40,0,768,1), no errors, 901.23 MB/s.
+[7] 18:32:16 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 975.74 MB/s.
+[6] 18:32:16 | completed rPrTest(4,0,13,1), no errors, 724.84 MB/s.
+[7] 18:32:16 | completed IOTest(1,0,19,5,60), no errors, 470.59 MB/s.
+[6] 18:32:17 | completed rPrTest(6,0,27,2), no errors, 375.38 MB/s.
+[9] 18:32:17 | completed mirrorMove(4,0,0,1), no errors, 2724.72 MB/s.
+[6] 18:32:17 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 918.46 MB/s.
+[8] 18:32:17 | completed mirrorMove(40,0,768,1), no errors, 768.77 MB/s.
+[3] 18:32:17 | completed mirrorMove(2,0,0,1), no errors, 2355.99 MB/s.
+[6] 18:32:17 | completed IOTest(1,0,19,5,60), no errors, 488.89 MB/s.
+[13] 18:32:17 | completed mirrorMove(4,0,0,1), no errors, 2700.88 MB/s.
+[5] 18:32:18 | completed mirrorMove(4,0,0,1), no errors, 2652.54 MB/s.
+[4] 18:32:18 | completed mirrorMove(2,0,0,1), no errors, 2035.05 MB/s.
+[9] 18:32:18 | completed mirrorMove(40,0,2048,1), no errors, 571.80 MB/s.
+[9] 18:32:19 | completed rPrTest(4,0,13,1), no errors, 807.80 MB/s.
+[13] 18:32:19 | completed mirrorMove(40,0,2048,1), no errors, 602.45 MB/s.
+[2] 18:32:19 | completed IO2Test(100,8,11,1), no errors, 1180.22 MB/s.
+[3] 18:32:19 | completed mirrorMove(35,0,1024,1), no errors, 934.59 MB/s.
+[5] 18:32:19 | completed mirrorMove(40,0,2048,1), no errors, 618.17 MB/s.
+[9] 18:32:19 | completed rPrTest(6,0,27,2), no errors, 472.35 MB/s.
+[13] 18:32:19 | completed rPrTest(4,0,13,1), no errors, 687.67 MB/s.
+[5] 18:32:19 | completed rPrTest(4,0,13,1), no errors, 707.63 MB/s.
+[9] 18:32:20 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 992.25 MB/s.
+[9] 18:32:20 | completed IOTest(1,0,19,5,60), no errors, 553.46 MB/s.
+[13] 18:32:20 | completed rPrTest(6,0,27,2), no errors, 409.10 MB/s.
+[5] 18:32:20 | completed rPrTest(6,0,27,2), no errors, 415.44 MB/s.
+[4] 18:32:20 | completed mirrorMove(35,0,1024,1), no errors, 665.82 MB/s.
+[3] 18:32:20 | completed mirrorMoveSSE(25,32,4194304,1), no errors, 0.30 MB/s.
+[15] 18:32:20 | completed mirrorMove(4,0,11,1), no errors, 1112.93 MB/s.
+[13] 18:32:20 | completed inverseTest(5,0,7,0xFFB1AACF12FFAFFF,1), no errors, 909.56 MB/s.

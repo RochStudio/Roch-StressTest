@@ -89,9 +89,30 @@ TESTMEM5 = [
     r"caused by a failure of tested memory",
 ]
 
-# RAM Test Pro is windowed and only writes a log when told to, so these fire
-# on whatever it does leave behind. The count guard matters most here: it
-# prints a running error total every cycle.
+# RAM Test Pro writes logs/log.txt beside its executable. Its own wording:
+#
+#   "Test errors detected: 0"     the verdict at the end of every run
+#   "Test stopped by user at ..." how a run that was cut short ends
+#   "Current Cycle 1"             the start of each cycle
+#
+# and the one that must NOT count:
+#
+#   "ERROR! Free up RAM or reduce memory size for test!"
+#
+# That last one is RAM Test Pro failing to get the memory it was asked for,
+# which is a setting to fix, not a DIMM to blame. Same distinction TM5 makes,
+# and the same reason for keeping this list separate from the generic one.
+RAMTEST = [
+    r"Test errors detected:\s*[1-9]\d*",
+    r"^\s*ERROR\s*=",
+    r"^\s*ERROR\s+\d",
+]
+
+RAMTEST_ABORTED = [
+    r"Test stopped by user",
+]
+
+# Generic memory-test wording, kept for anything not covered above.
 MEMTEST = [
     # "4 errors" fails; "0 errors" -- the line a clean cycle writes every
     # pass -- cannot match, because the count may not start with a zero.
@@ -159,7 +180,7 @@ PATTERNS = {
     "prime95": _compile(PRIME95),
     "ycruncher": _compile(YCRUNCHER),
     "testmem5": _compile(TESTMEM5 + MEMTEST),
-    "ramtest": _compile(MEMTEST),
+    "ramtest": _compile(RAMTEST),
     "linpack": _compile(LINPACK),
 }
 
