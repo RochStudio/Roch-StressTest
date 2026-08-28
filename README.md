@@ -42,6 +42,12 @@ Administrator rights are asked for once at launch. TestMem5 and RAM Test Pro nee
 | **Linpack Xtreme** | 2 / 4 / 6 / 8 / 14 / 30 GB | the raw Intel MKL binary with a generated input file |
 | **Linpack Extended** | the same, Intel CPUs only | the same, using that package's `linpack_xeon64.exe` |
 
+| **Cinebench** | R15, R15 Extreme, R20, R23, R24, R26 | `g_CinebenchCpuXTest=true g_CinebenchMinimumTestDuration=<s>` (R20+), `-cb_cpux` (R15) |
+| **memtest Vulkan** | first GPU / second GPU | the device index as a bare argument |
+| **3DMark 11** | Performance / Extreme / Entry | `3DMark11Cmd.exe --definition=<xml> --loop=0` |
+
+Not everything here checks its own answers, and the difference matters. Prime95, y-cruncher, Linpack, TestMem5, RAM Test Pro and memtest_vulkan all verify what they computed and can tell you the machine is *wrong*. Cinebench and 3DMark 11 are benchmarks: they load the hardware hard and report a score, but a pass means "it finished", not "the arithmetic was right". Use them for heat, sustained clocks and driver stability; use the others for correctness.
+
 Memory figures are computed from what is actually free when you pick a preset, not from a constant. Linpack's problem size and leading dimension are derived from the memory box using Intel's own rule — the nearest odd multiple of 16 at or above the problem size on AVX parts.
 
 ## Memory cleaner
@@ -64,6 +70,9 @@ What each tool runs from Quick Start, and what its own tab opens on:
 | RAM Test Pro | DDR4_DDR5_universal, 28 GB, threads auto, 1 cycle, stop on first error |
 | Linpack Xtreme | 4 GB, 30 min, residual checks on |
 | Linpack Extended | 4 GB, 30 min, residual checks on (Intel only) |
+| Cinebench | R23, all cores, 30 min |
+| memtest Vulkan | first GPU, 30 min |
+| 3DMark 11 | Performance, looping, 30 min |
 
 TM5's cycle count lives inside the `.cfg`, so overriding it means writing a copy. That copy goes to `bin/Roch active.cfg`, with only the `Cycles=` line changed and every other byte identical. The stock profiles are never edited: a cycle count set here is a property of the run, not of the profile.
 

@@ -104,7 +104,14 @@ class LaunchSpec:
         abort_patterns=(),
         leave_open=False,
         on_started=None,
+        setup_patterns=(),
     ):
+        # Lines that mean the tool could not run for a reason that has
+        # nothing to do with the hardware -- a licence it does not have, a
+        # setting it will not accept. Reported as "could not start", never as
+        # a failure: telling somebody their memory is unstable because a
+        # benchmark wanted a Professional licence would be a lie.
+        self.setup_patterns = list(setup_patterns)
         # Called once, on the runner's thread, just after the process starts.
         # For the one tool that has no command line and no settings file, this
         # is where its window gets filled in and its Start button pressed. It
@@ -166,6 +173,12 @@ class Tool:
     # Relative to the tools root: the first path that exists wins, so a
     # version bump that renames the folder only needs a pattern added.
     exe_globs = ()
+    # Absolute patterns, searched after the tools root. Some of these tools
+    # are installed rather than unpacked -- 3DMark lives under Program Files,
+    # Cinebench under whichever launcher put it there -- and copying an
+    # installed application into this folder to satisfy a lookup would be
+    # worse than looking where it actually is.
+    external_globs = ()
     # False for the windowed tools, whose output cannot be piped.
     console = False
     # Set on tools whose own window is the only place errors appear.
@@ -188,10 +201,15 @@ class Tool:
         import glob
 
         for pattern in self.exe_globs:
-            matches = sorted(glob.glob(os.path.join(root, pattern)))
-            for match in matches:
+            for match in sorted(glob.glob(os.path.join(root, pattern))):
                 if os.path.isfile(match):
                     return match
+        # Newest first, so a machine with several versions installed gets the
+        # current one rather than whichever sorts first.
+        for pattern in self.external_globs:
+            matches = [m for m in glob.glob(pattern) if os.path.isfile(m)]
+            if matches:
+                return sorted(matches)[-1]
         return None
 
     def available(self, root):

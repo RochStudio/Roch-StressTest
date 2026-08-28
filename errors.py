@@ -155,6 +155,53 @@ YCRUNCHER_COMPLETE = [
 ]
 
 
+# memtest_vulkan's own wording, out of the binary. Every good pass prints
+# "iteration. Passed"; a bad one prints "Error found. Mode ..., total errors"
+# and then the address range. Its "Standard 5-minute test" banner is not a
+# result and must not be mistaken for one.
+# Cinebench renders and scores; it has no notion of a wrong answer to report.
+# What it does have is the ways it can fail to run at all, and a driver that
+# falls over mid-render is exactly the instability worth catching.
+CINEBENCH = [
+    r"Error loading",
+    r"could not be (?:created|initialized)",
+    r"rendering failed",
+    r"out of memory",
+]
+
+# 3DMark's command-line runner reports a failed workload rather than a score.
+THREEDMARK = [
+    r"^Error:",
+    r"workload .*failed",
+    r"device (?:removed|hung|reset)",
+    r"DXGI_ERROR",
+]
+
+MEMTEST_VULKAN = [
+    r"Error found",
+    r"Errors address range",
+    r"error found",
+    r"^\s*FAILED",
+]
+
+# It stops only when told to, so any ending it announces is the end of the
+# run rather than a verdict; the runner's clock is what finishes a pass.
+MEMTEST_VULKAN_ABORTED = [
+    r"Test cancelled, no device selected",
+    r"early exit during init",
+]
+
+
+# 3DMark's command-line runner is a Professional-edition feature. On a Basic
+# install it prints its usage and refuses, which is a licence problem and not
+# a word about the graphics card.
+THREEDMARK_SETUP = [
+    r"Professional edition is required",
+    r"Registration key is invalid",
+    r"Unrecognized argument",
+]
+
+
 def _compile(patterns):
     return [re.compile(p, re.IGNORECASE) for p in patterns + _COMMON]
 
@@ -182,6 +229,9 @@ PATTERNS = {
     "testmem5": _compile(TESTMEM5 + MEMTEST),
     "ramtest": _compile(RAMTEST),
     "linpack": _compile(LINPACK),
+    "memtest_vulkan": _compile(MEMTEST_VULKAN),
+    "cinebench": _compile(CINEBENCH),
+    "3dmark11": _compile(THREEDMARK),
 }
 
 

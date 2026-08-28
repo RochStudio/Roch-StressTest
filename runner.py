@@ -280,6 +280,7 @@ class Runner:
         # its output, because waiting on the process would wait for ever.
         finished = errors.compile_plain(spec.completion_patterns)
         aborted = errors.compile_plain(spec.abort_patterns)
+        setup_trouble = errors.compile_plain(spec.setup_patterns)
         saw_completion = False
 
         reader = None
@@ -347,6 +348,11 @@ class Runner:
                             break
                         continue
 
+                if setup_trouble and errors.matches(stripped, setup_trouble):
+                    outcome, note = BROKEN, (
+                        "The tool cannot run as configured: " + stripped)
+                    break
+
                 hit = errors.scan(stripped, spec.error_key)
                 if hit:
                     outcome, note = FAILED, hit
@@ -398,6 +404,10 @@ class Runner:
                         continue
                     self._emit("output", line=stripped)
                     if outcome:
+                        continue
+                    if setup_trouble and errors.matches(stripped, setup_trouble):
+                        outcome, note = BROKEN, (
+                            "The tool cannot run as configured: " + stripped)
                         continue
                     hit = errors.scan(stripped, spec.error_key)
                     if hit:

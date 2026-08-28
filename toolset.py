@@ -1,15 +1,20 @@
 """The registry: every tool this program knows how to start, in tab order.
 
 Order is deliberate. The two CPU tests come first because they are what you
-reach for after a clock change, then the two memory tests, then Linpack --
-which is the harshest and the one most likely to be run last, once everything
-else has passed.
+reach for after a clock change, then the two memory tests, then the two
+Linpacks -- the harshest, and the ones most likely to be run last once
+everything else has passed. Cinebench follows as a load rather than a check,
+and the two graphics tools come last because they test a different piece of
+hardware entirely.
 """
 
 import os
 import sys
 
+from tool_3dmark11 import ThreeDMark11
+from tool_cinebench import Cinebench
 from tool_linpack import LinpackExtended, LinpackXtreme
+from tool_memtest_vulkan import MemtestVulkan
 from tool_prime95 import Prime95
 from tool_ramtest import RamTestPro
 from tool_testmem5 import TestMem5
@@ -22,6 +27,9 @@ TOOLS = (
     RamTestPro(),
     LinpackXtreme(),
     LinpackExtended(),
+    Cinebench(),
+    MemtestVulkan(),
+    ThreeDMark11(),
 )
 
 BY_KEY = {tool.key: tool for tool in TOOLS}
