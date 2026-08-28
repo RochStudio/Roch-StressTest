@@ -1,6 +1,6 @@
 # Roch StressTest
 
-**Roch StressTest** — one window for every stress test on the machine. Prime95, y-cruncher, TestMem5, RAM Test Pro and Linpack, each with presets that say what they actually do, a time limit, and live failure detection. Python 3.13 / CustomTkinter, same theme as [Roch Viewer](https://github.com/RochStudio/Roch-Viewer) and [Roch GPU OC](https://github.com/RochStudio/Roch-GPU).
+**Roch StressTest** — one window for every stress test on the machine. Prime95, y-cruncher, TestMem5, RAM Test Pro, both Linpacks, Cinebench, memtest_vulkan and 3DMark 11, each with presets that say what they actually do, a time limit, and live failure detection. Python 3.13 / CustomTkinter, same theme as [Roch Viewer](https://github.com/RochStudio/Roch-Viewer) and [Roch GPU OC](https://github.com/RochStudio/Roch-GPU).
 
 It does not implement a single test. Every tool runs exactly as it would if you started it yourself; what this adds is the part they leave to you.
 
@@ -16,7 +16,8 @@ Roch StressTest/
 ├─ theme.py                the shared Roch palette
 ├─ widgets.py              the field/section widgets the panels are built from
 ├─ hardware.py             cores, RAM and CPU vendor, for the defaults
-└─ <tool folders>          Prime95, y-cruncher, TestMem5, RAM Test Pro, Linpack
+└─ <tool folders>          Prime95, y-cruncher, TestMem5, RAM Test Pro,
+                          both Linpacks, memtest_vulkan
 ```
 
 ## Run it
@@ -41,10 +42,9 @@ Administrator rights are asked for once at launch. TestMem5 and RAM Test Pro nee
 | **RAM Test Pro** | every `.cfg` in `config/` | `config/current_config.txt`, plus its window filled in |
 | **Linpack Xtreme** | 2 / 4 / 6 / 8 / 14 / 30 GB | the raw Intel MKL binary with a generated input file |
 | **Linpack Extended** | the same, Intel CPUs only | the same, using that package's `linpack_xeon64.exe` |
-
 | **Cinebench** | R15, R15 Extreme, R20, R23, R24, R26 | `g_CinebenchCpuXTest=true g_CinebenchMinimumTestDuration=<s>` (R20+), `-cb_cpux` (R15) |
 | **memtest Vulkan** | first GPU / second GPU | the device index as a bare argument |
-| **3DMark 11** | Performance / Extreme / Entry | opens `bindDMark11.exe`; `3DMark11Cmd.exe --loop=0` with Professional |
+| **3DMark 11** | Performance / Extreme / Entry | opens `bin\x64\3DMark11.exe`; `3DMark11Cmd.exe --loop=0` with Professional |
 
 Not everything here checks its own answers, and the difference matters. Prime95, y-cruncher, Linpack, TestMem5, RAM Test Pro and memtest_vulkan all verify what they computed and can tell you the machine is *wrong*. Cinebench and 3DMark 11 are benchmarks: they load the hardware hard and report a score, but a pass means "it finished", not "the arithmetic was right". Use them for heat, sustained clocks and driver stability; use the others for correctness.
 
