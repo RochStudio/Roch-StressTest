@@ -24,6 +24,20 @@ for tool in toolset.TOOLS:
     panel = app.panels.get(tool.key)
     if panel is None:
         print("SKIP", tool.name, "(not available)"); continue
+    blocked = tool.unsupported_reason(app.root_path)
+    if blocked:
+        # A tool that cannot run here must refuse to build, not build
+        # something that will exit having done nothing. That refusal is the
+        # thing worth checking.
+        try:
+            tool.build(tool.quick_config(app.root_path), app.root_path)
+        except Exception as error:
+            print("OK   %-17s refuses to run here: %s" % (tool.name, str(error)[:52]))
+        else:
+            fails += 1
+            print("FAIL %-17s is blocked but still built a launch spec" % tool.name)
+        continue
+
     for preset in panel.presets():
         panel.preset_row.set(preset.name)
         panel.apply_preset(preset.name)
@@ -51,6 +65,8 @@ print()
 for tool in toolset.TOOLS:
     panel = app.panels.get(tool.key)
     if panel is None:
+        continue
+    if tool.unsupported_reason(app.root_path):
         continue
     panel.apply_quick_start()
     root.update_idletasks()

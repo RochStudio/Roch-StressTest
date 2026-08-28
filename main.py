@@ -107,6 +107,7 @@ class ToolPanel:
         )
         header.pack(fill="x", padx=12, pady=(10, 8))
 
+        self._build_unsupported_section(frame)
         self._build_preset_section(frame)
         self._build_settings_section(frame)
         self._build_detection_section(frame)
@@ -162,6 +163,18 @@ class ToolPanel:
             return [name for name, _ in self.tool.configs(self.app.root_path)]
         return []
 
+    def _build_unsupported_section(self, parent):
+        """A banner when the tool is present but cannot run on this machine."""
+        reason = self.tool.unsupported_reason(self.app.root_path)
+        if not reason:
+            return
+        body = widgets.section(parent, "Not for this processor")
+        ctk.CTkLabel(
+            body, text=reason, font=theme.COMPACT_FONT,
+            text_color=theme.WARN_COLOR, anchor="w", justify="left",
+            wraplength=880,
+        ).grid(row=0, column=0, columnspan=3, sticky="w")
+
     def _build_detection_section(self, parent):
         if not self.tool.detection_note:
             return
@@ -172,9 +185,12 @@ class ToolPanel:
         bar = ctk.CTkFrame(parent, fg_color=theme.SECTION_COLOR,
                            corner_radius=6, height=42)
         bar.pack(side="bottom", fill="x", padx=6, pady=(6, 6))
-        widgets.action_button(
+        start = widgets.action_button(
             bar, "Start", self.start, kind="start", width=120
-        ).pack(side="left", padx=(10, 0), pady=8)
+        )
+        start.pack(side="left", padx=(10, 0), pady=8)
+        if self.tool.unsupported_reason(self.app.root_path):
+            start.configure(state="disabled")
 
     # -- behaviour -------------------------------------------------------
 
@@ -471,16 +487,22 @@ class StressApp:
         available = tool.available(self.root_path)
         body = widgets.section(parent, tool.name)
 
+        blocked = tool.unsupported_reason(self.root_path) if available else ""
+        if not available:
+            headline = "Not found -- see the " + tool.name + " tab."
+        elif blocked:
+            headline = "Not for this processor"
+        else:
+            headline = tool.quick_summary(self.root_path)
+
         ctk.CTkLabel(
-            body,
-            text=(tool.quick_summary(self.root_path) if available
-                  else "Not found -- see the " + tool.name + " tab."),
-            font=theme.COMPACT_BOLD,
-            text_color=theme.TEXT_COLOR if available else theme.FAIL_COLOR,
+            body, text=headline, font=theme.COMPACT_BOLD,
+            text_color=(theme.TEXT_COLOR if available and not blocked
+                        else theme.WARN_COLOR if blocked else theme.FAIL_COLOR),
             anchor="w", justify="left", wraplength=400,
         ).grid(row=0, column=0, columnspan=2, sticky="w")
 
-        note = tool.quick_note() if available else ""
+        note = blocked or (tool.quick_note() if available else "")
         if note:
             widgets.hint(body, note, 1, column=0, span=2, wrap=380)
 
@@ -491,7 +513,7 @@ class StressApp:
             kind="start", width=110,
         )
         start.pack(side="left")
-        if not available:
+        if not available or blocked:
             start.configure(state="disabled")
 
     def _build_missing_panel(self, parent, tool):

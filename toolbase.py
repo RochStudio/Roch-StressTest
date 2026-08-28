@@ -197,6 +197,15 @@ class Tool:
     def available(self, root):
         return self.locate(root) is not None
 
+    def unsupported_reason(self, root):
+        """Why this tool cannot run on this machine, or "" when it can.
+
+        Separate from ``available``, which is about whether the files are
+        there. A tool can be present and still be the wrong tool for the
+        processor, and saying so beats letting it start and do nothing.
+        """
+        return ""
+
     def defaults(self):
         """The field defaults as a plain dict."""
         return {field.key: field.default for field in self.fields}

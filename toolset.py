@@ -9,7 +9,7 @@ else has passed.
 import os
 import sys
 
-from tool_linpack import Linpack
+from tool_linpack import LinpackExtended, LinpackXtreme
 from tool_prime95 import Prime95
 from tool_ramtest import RamTestPro
 from tool_testmem5 import TestMem5
@@ -20,7 +20,8 @@ TOOLS = (
     YCruncher(),
     TestMem5(),
     RamTestPro(),
-    Linpack(),
+    LinpackXtreme(),
+    LinpackExtended(),
 )
 
 BY_KEY = {tool.key: tool for tool in TOOLS}

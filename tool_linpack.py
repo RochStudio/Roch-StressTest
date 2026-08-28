@@ -57,7 +57,15 @@ def problem_size_for(memory_mb, avx=True):
     return step
 
 
-class Linpack(Tool):
+class _Linpack(Tool):
+    """What both Linpack packages have in common, which is nearly everything.
+
+    They are two front-ends over the same Intel benchmark. The input file,
+    the leading-dimension arithmetic, the environment, the teed console and
+    the row-by-row checking are identical; the binary and who is allowed to
+    run it are not.
+    """
+
     key = "linpack"
     name = "Linpack"
     blurb = (
@@ -65,12 +73,9 @@ class Linpack(Tool):
         "find a core or memory setting that is only nearly stable. Watch "
         "temperatures: nothing else here pulls this much current."
     )
-    # Xtreme's binaries first -- the 2018.3 MKL build, and it includes an
-    # AMD-specific one. Extended's xeon64 is the fallback.
-    exe_globs = (
-        "LinpackXtreme*/binaries/x64/linpack_*64.exe",
-        "Linpack-Extended*/dependencies/linpack/linpack_xeon64.exe",
-    )
+    exe_globs = ()
+    # Set on the build that refuses to run on anything but an Intel CPU.
+    intel_only = False
     console = True
     detection_note = (
         "Every result row is parsed. A row whose check column is not 'pass', "
@@ -127,6 +132,23 @@ class Linpack(Tool):
         Preset("Custom", {}, "Whatever is in the boxes below."),
     )
 
+    def unsupported_reason(self, root):
+        """Why this build cannot run here, or "" when it can.
+
+        Asked before anything is started, so a machine that cannot run a tool
+        is told plainly instead of watching it exit cleanly having done
+        nothing -- which is exactly what the Intel-only build does.
+        """
+        if self.intel_only and hardware.is_amd():
+            return (
+                "Linpack Extended ships the Intel-only build "
+                "(linpack_xeon64.exe), which refuses to run on an AMD "
+                "processor -- it prints \"runs on only genuine Intel "
+                "processors\" and exits without testing anything. Use "
+                "Linpack Xtreme on this machine; it ships an AMD build."
+            )
+        return ""
+
     def apply_memory(self, config):
         """Recompute problem size and leading dimension from the memory box.
 
@@ -138,34 +160,24 @@ class Linpack(Tool):
         config["leading_dimension"] = leading_dimension(size)
         return config
 
+    def pick_binary(self, folder, found):
+        """Which of the binaries in *folder* to run. Overridden by Xtreme."""
+        return found
+
     def build(self, config, root):
         exe = self.locate(root)
         if not exe:
             raise ToolUnavailable(
-                "No Linpack binary was found. Expected LinpackXtreme's "
-                "binaries/x64 folder, or Linpack Extended's dependencies "
-                "folder, beside this program."
+                self.name + "'s binary was not found. Expected its folder "
+                "beside this program."
             )
 
-        # Xtreme ships both vendor builds. The AMD one forces the AVX2 paths
-        # that the Intel build gates behind a vendor check, so on Ryzen the
-        # Intel build produces a number that means very little.
+        blocked = self.unsupported_reason(root)
+        if blocked:
+            raise ToolUnavailable(blocked)
+
         folder = os.path.dirname(exe)
-        preferred = "linpack_amd64.exe" if hardware.is_amd() else "linpack_intel64.exe"
-        candidate = os.path.join(folder, preferred)
-        if os.path.isfile(candidate):
-            exe = candidate
-
-        # The Intel-branded builds check the vendor string and exit with
-        # "runs on only genuine Intel processors" rather than failing loudly,
-        # which would otherwise look like a test that finished instantly.
-        if hardware.is_amd() and "amd64" not in os.path.basename(exe).lower():
-            raise ToolUnavailable(
-                "Only an Intel-only Linpack build was found (" +
-                os.path.basename(exe) + "), and it refuses to run on an AMD "
-                "processor. LinpackXtreme's binaries/x64/linpack_amd64.exe "
-                "is the build this machine needs."
-            )
+        exe = self.pick_binary(folder, exe)
 
         size = int(config.get("problem_size", 22528))
         lda = int(config.get("leading_dimension", 0)) or leading_dimension(size)
@@ -252,3 +264,63 @@ class Linpack(Tool):
             creation_flags=(self._new_console_flags() if show
                             else self._no_window_flags()),
         )
+
+
+class LinpackXtreme(_Linpack):
+    """Linpack Xtreme's binaries: the 2018.3 MKL build, in both vendor forms."""
+
+    key = "linpack_xtreme"
+    name = "Linpack Xtreme"
+    blurb = (
+        "The heaviest sustained AVX load of the set, and the quickest way to "
+        "find a core or memory setting that is only nearly stable. This is "
+        "the package to use on AMD -- it ships a build that runs there. "
+        "Watch temperatures: nothing else here pulls this much current."
+    )
+    exe_globs = ("LinpackXtreme*/binaries/x64/linpack_*64.exe",)
+
+    quick_start = {
+        "preset": "4 GB",
+        "values": {"duration": 30, "residual_check": True},
+        "note": "4 GB problem, 30 minutes, residual checks on. Start here "
+                "before the larger sizes.",
+    }
+
+    def pick_binary(self, folder, found):
+        """The build that matches this processor.
+
+        Xtreme ships both. The AMD one forces the AVX2 paths that the Intel
+        one gates behind a vendor check, so running the Intel build on a
+        Ryzen produces a number that means very little -- when it runs at all.
+        """
+        preferred = ("linpack_amd64.exe" if hardware.is_amd()
+                     else "linpack_intel64.exe")
+        candidate = os.path.join(folder, preferred)
+        return candidate if os.path.isfile(candidate) else found
+
+
+class LinpackExtended(_Linpack):
+    """Linpack Extended's binary, which is Intel-only.
+
+    Its linpack_xeon64.exe checks the vendor string and, on anything that is
+    not an Intel processor, prints "This binary version of the SMP LINPACK
+    benchmark is optimized for and runs on only genuine Intel processors" and
+    exits with status zero. Nothing is tested and nothing looks wrong, which
+    is why this tool refuses to start on AMD rather than letting it happen.
+    """
+
+    key = "linpack_extended"
+    name = "Linpack Extended"
+    blurb = (
+        "The same Intel benchmark from the Linpack Extended package. Intel "
+        "processors only -- its binary refuses to run anywhere else. On AMD, "
+        "use Linpack Xtreme instead."
+    )
+    exe_globs = ("Linpack-Extended*/dependencies/linpack/linpack_xeon64.exe",)
+    intel_only = True
+
+    quick_start = {
+        "preset": "4 GB",
+        "values": {"duration": 30, "residual_check": True},
+        "note": "30 minutes with residual checks on. Intel only.",
+    }
