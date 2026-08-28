@@ -37,14 +37,16 @@ Administrator rights are asked for once at launch. TestMem5 and RAM Test Pro nee
 | Tool | Presets | Driven by |
 |---|---|---|
 | **Prime95** | Smallest / Small / Large / Blend / Huge FFTs | `prime.txt` in a private work directory, then `prime95 -W<dir> -t` |
-| **y-cruncher** | All algorithms, Vector+FFT, VSTv3, in-cache, memory-heavy | `y-cruncher … stress -M -D -TL <algorithms>` |
+| **y-cruncher** | no presets — all eight algorithms as tick boxes | `y-cruncher … stress -M -D -TL <algorithms>` |
 | **TestMem5** | every `.cfg` in `bin/`, anta777 profiles first | `Config File="name.cfg"`, cycle count rewritten |
 | **RAM Test Pro** | every `.cfg` in `config/` | `config/current_config.txt`, plus its window filled in |
 | **Linpack Xtreme** | 2 / 4 / 6 / 8 / 14 / 30 GB | the raw Intel MKL binary with a generated input file |
 | **Linpack Extended** | the same, Intel CPUs only | the same, using that package's `linpack_xeon64.exe` |
-| **Cinebench** | R15, R15 Extreme, R20, R23, R24, R26 | `g_CinebenchCpuXTest=true g_CinebenchMinimumTestDuration=<s>` (R20+), `-cb_cpux` (R15) |
+| **Cinebench** | R15, R15 Extreme, R20, R23, R24, R26 | `g_CinebenchCpuXTest=true`, plus `g_CinebenchMinimumTestDuration=<s>` only when looping (R20+); `-cb_cpux` (R15) |
 | **memtest Vulkan** | first GPU / second GPU | the device index as a bare argument |
 | **3DMark 11** | Performance / Extreme / Entry | opens `bin\x64\3DMark11.exe`; `3DMark11Cmd.exe --loop=0` with Professional |
+
+y-cruncher has no presets: its algorithms are not alternatives, so all eight are tick boxes and any combination runs. Ticking none runs the lot, which is y-cruncher's own convention. Cinebench chooses between one scored run and looping until the time limit — a single run simply leaves the minimum-duration argument off, and R15 can only ever do that.
 
 Not everything here checks its own answers, and the difference matters. Prime95, y-cruncher, Linpack, TestMem5, RAM Test Pro and memtest_vulkan all verify what they computed and can tell you the machine is *wrong*. Cinebench and 3DMark 11 are benchmarks: they load the hardware hard and report a score, but a pass means "it finished", not "the arithmetic was right". Use them for heat, sustained clocks and driver stability; use the others for correctness.
 
@@ -65,12 +67,12 @@ What each tool runs from Quick Start, and what its own tab opens on:
 | Tool | Default |
 |---|---|
 | Prime95 | Large FFTs (2048K–8192K), 30 min |
-| y-cruncher | VT3 (VSTv3) alone, 28 GB, 30 min |
+| y-cruncher | VSTv3 ticked, 28 GB, 30 min |
 | TestMem5 | 1usmus v3 @ 1usmus, 25 cycles, no time limit |
 | RAM Test Pro | DDR4_DDR5_universal, 28 GB, threads auto, 1 cycle, stop on first error |
 | Linpack Xtreme | 4 GB, 30 min, residual checks on |
 | Linpack Extended | 4 GB, 30 min, residual checks on (Intel only) |
-| Cinebench | R23, all cores, 30 min |
+| Cinebench | R23, all cores, one scored run |
 | memtest Vulkan | first GPU, 30 min |
 | 3DMark 11 | opens its window, 30 min |
 
