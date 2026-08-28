@@ -10,8 +10,9 @@ watchable -- but y-cruncher will write the same text to a file, which the
 runner tails instead. Nothing is lost by showing it.
 
 The algorithm names come straight from Command Lines.txt in the distribution.
-Naming any algorithm disables the rest, which is why "All algorithms" passes
-none at all rather than listing them.
+Naming any algorithm disables the rest, which is why ticking none of them
+passes none at all rather than listing them: that is how y-cruncher is told
+to run the lot.
 """
 
 import os
@@ -62,9 +63,11 @@ class YCruncher(Tool):
     )
 
     fields = (
-        Field("algorithms", "Algorithms", "text", "",
-              hint="Blank runs all of them. Otherwise a space-separated "
-                   "subset, e.g. VSTv3 FFTv4."),
+        Field("algorithms", "Algorithms", "multi", "VSTv3",
+              choices=[name for name, _description in ALGORITHMS],
+              hint="Tick as many as you want; they run one after another. "
+                   "None ticked runs all of them, which is y-cruncher's own "
+                   "default."),
         Field("memory", "Memory to use", "int", 0, minimum=0, maximum=1048576,
               unit="MB", hint="0 leaves y-cruncher's own default in place."),
         Field("per_test", "Seconds per test", "int", 60, minimum=0,
@@ -94,34 +97,22 @@ class YCruncher(Tool):
 
     # What the Quick Start page runs, and what this tab opens on.
     quick_start = {
-        "preset": "VSTv3 only",
-        "values": {"memory": 28 * 1024, "duration": 30, "per_test": 0,
-                   "pause": True},
+        "values": {"algorithms": "VSTv3", "memory": 28 * 1024, "duration": 30,
+                   "per_test": 0, "pause": True},
         "note": "VT3 alone, 28 GB, 30 minutes. More memory than is normally "
                 "free, so Windows will page to reach it.",
     }
 
-    presets = (
-        Preset("All algorithms",
-               {"algorithms": "", "per_test": 60},
-               "The default sweep. Broadest coverage, slowest to repeat any "
-               "one weakness."),
-        Preset("Vector + FFT (VSTv3, FFTv4)",
-               {"algorithms": "VSTv3 FFTv4", "per_test": 90},
-               "The two that pull the most current and touch the most RAM. "
-               "Start here for a memory or SoC voltage check."),
-        Preset("VSTv3 only",
-               {"algorithms": "VSTv3", "per_test": 120},
-               "The single hottest test on AVX-512 parts."),
-        Preset("In-cache only (SFTv4, SNT, SVT)",
-               {"algorithms": "SFTv4 SNT SVT", "per_test": 60},
-               "Stays inside the cache: a core and vcore test that mostly "
-               "leaves the DIMMs alone."),
-        Preset("Memory-heavy (FFTv4, NTT63, BKT)",
-               {"algorithms": "FFTv4 NTT63 BKT", "per_test": 90},
-               "Large working sets, for an IMC and DIMM check."),
-        Preset("Custom", {}, "Whatever is in the boxes below."),
-    )
+    def quick_summary(self, root):
+        """Named by what is ticked, since there is no preset to name."""
+        config = self.quick_config(root)
+        chosen = str(config.get("algorithms", "")).split()
+        parts = [" ".join(chosen) if chosen else "all algorithms"]
+        if int(config.get("memory", 0) or 0):
+            parts.append(self._memory_argument(int(config["memory"]))[3:])
+        minutes = int(config.get("duration", 0) or 0)
+        parts.append(str(minutes) + " min" if minutes else "no time limit")
+        return "  |  ".join(parts)
 
     # Windows priority values from the manual's Startup Parameters section.
     _PRIORITY = {
@@ -142,17 +133,6 @@ class YCruncher(Tool):
         if megabytes % 1024 == 0:
             return "-M:" + str(megabytes // 1024) + "GB"
         return "-M:" + str(megabytes) + "M"
-
-    def suggested_memory(self, preset_name):
-        """Half of what is free, which is y-cruncher's own guidance.
-
-        The stress tester allocates once and holds it. Taking everything free
-        pushes Windows into the page file, and a run that is waiting on an SSD
-        is not testing memory.
-        """
-        if preset_name.startswith("In-cache"):
-            return 0
-        return max(512, int(hardware.available_ram_mb() * 0.5))
 
     def build(self, config, root):
         exe = self.locate(root)

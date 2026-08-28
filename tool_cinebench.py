@@ -17,8 +17,9 @@ Two generations, two command lines, both confirmed by running them:
     produced two passes where the default produced one.
 
   R15 is older and takes switches -- ``-cb_cpux`` for the all-core render.
-    It has no duration setting, so it renders once and stops, however long
-    that takes. That is a benchmark, not a soak, and the panel says so.
+    It has no duration setting at all, so it can only ever do the single
+    run, however long that takes. The panel says so rather than offering a
+    loop that would not happen.
 
 A word on what this is for. Cinebench is a benchmark: it reports a score, not
 a verdict, and it has no idea whether the answer it computed was right. It
@@ -85,17 +86,23 @@ class Cinebench(Tool):
               choices=["All cores", "Single core"],
               hint="All cores is the stress test; single core is a "
                    "clock-and-boost check."),
+        Field("mode", "Run", "choice", "One run",
+              choices=["One run", "Loop for the time limit"],
+              hint="One run renders the scene once and reports the score, "
+                   "which is what Cinebench is normally used for. Looping "
+                   "re-runs it until the time limit, which is what makes it "
+                   "a soak. R15 can only do one run."),
         Field("duration", "Stop after", "int", 30, minimum=0, maximum=100000,
               unit="min",
-              hint="R20 and later re-run the render until this much time has "
-                   "passed, which is what makes it a soak. R15 ignores it "
-                   "and renders once."),
+              hint="How long to keep looping for. Ignored on a single run, "
+                   "which takes as long as it takes."),
     )
 
     quick_start = {
         "preset": "R23",
-        "values": {"test": "All cores", "duration": 30},
-        "note": "R23, all cores, 30 minutes of sustained render.",
+        "values": {"test": "All cores", "mode": "One run", "duration": 30},
+        "note": "R23, all cores, a single scored run. Switch Run to looping "
+                "on the tab for a soak.",
     }
 
     _NOTES = {
@@ -169,15 +176,19 @@ class Cinebench(Tool):
 
         all_cores = str(config.get("test", "All cores")) == "All cores"
         minutes = int(config.get("duration", 0))
+        looping = str(config.get("mode", "One run")) != "One run"
 
         if generation == "new":
             argv = [exe, "g_CinebenchCpuXTest=true" if all_cores
                     else "g_CinebenchCpu1Test=true"]
-            if minutes > 0:
+            # Left off entirely for a single run. Given a minimum duration
+            # Cinebench re-renders until it is met, so omitting it is how you
+            # ask for exactly one pass and the score that goes with it.
+            if looping and minutes > 0:
                 # Seconds, despite the log line printing it in milliseconds.
                 argv.append("g_CinebenchMinimumTestDuration="
                             + str(minutes * 60))
-            held = minutes > 0
+            held = looping and minutes > 0
         else:
             # R15's switches. It renders once and stops; there is nothing to
             # pass it that would make it hold the load for longer.
@@ -186,9 +197,8 @@ class Cinebench(Tool):
 
         summary = "Cinebench " + wanted + ", " + (
             "all cores" if all_cores else "single core")
-        summary += (", " + str(minutes) + " min" if held
-                    else ", one render" if generation == "old"
-                    else ", no time limit")
+        summary += (", looping " + str(minutes) + " min" if held
+                    else ", one run")
 
         return LaunchSpec(
             argv=argv,

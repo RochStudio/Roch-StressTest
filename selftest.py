@@ -38,6 +38,19 @@ for tool in toolset.TOOLS:
             print("FAIL %-17s is blocked but still built a launch spec" % tool.name)
         continue
 
+    if not panel.presets():
+        # A tool with nothing to preset would otherwise be skipped entirely
+        # here, which is exactly the coverage worth keeping.
+        cfg = panel.config()
+        try:
+            spec = tool.build(cfg, app.root_path)
+            assert os.path.isfile(spec.argv[0]), "exe missing"
+            print("OK   %-17s %-24s %s" % (tool.name, "(no presets)",
+                                           spec.summary[:52]))
+        except Exception as error:
+            fails += 1
+            print("FAIL %-17s %-24s %r" % (tool.name, "(no presets)", error))
+
     for preset in panel.presets():
         panel.preset_row.set(preset.name)
         panel.apply_preset(preset.name)

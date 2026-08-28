@@ -125,8 +125,16 @@ class ToolPanel:
     def _build_preset_section(self, parent):
         from toolbase import Field
 
-        body = widgets.section(parent, "What to run")
         names = [preset.name for preset in self.presets()]
+        if not names:
+            # Some tools have nothing to preset -- y-cruncher's algorithms
+            # are ticked individually, and a picker with one entry would be
+            # a control that does nothing.
+            self.preset_row = None
+            self.preset_note = None
+            return
+
+        body = widgets.section(parent, "What to run")
         field = Field("preset", "Preset", "choice", names[0] if names else "",
                       choices=names)
         self.preset_row = widgets.FieldRow(
@@ -202,9 +210,10 @@ class ToolPanel:
         anything does exactly what the Quick Start button does.
         """
         name = self.tool.quick_preset_name(self.app.root_path)
-        if name:
+        if name and self.preset_row is not None:
             self.preset_row.set(name)
-        self.apply_preset(name, initial=True)
+        if self.preset_row is not None:
+            self.apply_preset(name, initial=True)
 
         overrides = self.tool.quick_start.get("values", {})
         if not overrides:
@@ -231,7 +240,8 @@ class ToolPanel:
         if preset is None:
             return
 
-        self.preset_note.configure(text=preset.description)
+        if self.preset_note is not None:
+            self.preset_note.configure(text=preset.description)
         if not preset.values and not initial:
             return
 
@@ -277,8 +287,9 @@ class ToolPanel:
         return values
 
     def label(self):
-        preset = self.preset_row.value()
-        return self.tool.name + " -- " + preset
+        if self.preset_row is None:
+            return self.tool.name
+        return self.tool.name + " -- " + self.preset_row.value()
 
     def start(self):
         self.app.start_single(self.tool, self.config(), self.label())
@@ -700,7 +711,8 @@ class StressApp:
         self.stop_button.configure(state="normal")
 
     def quick_label(self, tool):
-        return tool.name + " -- " + tool.quick_preset_name(self.root_path)
+        name = tool.quick_preset_name(self.root_path)
+        return tool.name + (" -- " + name if name else "")
 
     def start_quick(self, tool):
         """Run a tool's default configuration straight from the Quick Start page."""

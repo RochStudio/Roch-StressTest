@@ -85,7 +85,36 @@ class FieldRow:
 
         label(parent, field.label, row)
 
-        if field.kind == "bool":
+        if field.kind == "multi":
+            # A tick per choice, two to a row. y-cruncher's algorithms are
+            # not alternatives -- any combination is a valid run -- so a
+            # dropdown would be the wrong shape for them entirely.
+            self.variables = {}
+            holder = ctk.CTkFrame(parent, fg_color="transparent")
+            holder.grid(row=row, column=1, columnspan=2, sticky="w",
+                        padx=(8, 0), pady=1)
+            chosen = set(str(field.default).replace(",", " ").split())
+            for index, choice in enumerate(field.choices):
+                variable = ctk.BooleanVar(value=choice in chosen)
+                self.variables[choice] = variable
+                ctk.CTkCheckBox(
+                    holder,
+                    text=choice,
+                    variable=variable,
+                    width=20,
+                    checkbox_width=16,
+                    checkbox_height=16,
+                    font=theme.COMPACT_FONT,
+                    text_color=theme.TEXT_COLOR,
+                    fg_color=theme.TAB_SELECTED_COLOR,
+                    hover_color=theme.TAB_HOVER_COLOR,
+                    border_color=theme.RULE_COLOR,
+                    command=self._changed,
+                ).grid(row=index // 2, column=index % 2, sticky="w",
+                       padx=(0, 18), pady=1)
+            self.widget = holder
+            self.variable = None
+        elif field.kind == "bool":
             self.variable = ctk.BooleanVar(value=bool(field.default))
             self.widget = ctk.CTkSwitch(
                 parent,
@@ -142,10 +171,20 @@ class FieldRow:
             self.on_change(self.field.key)
 
     def value(self):
+        if self.field.kind == "multi":
+            # In the order the tool lists them, not the order they were
+            # ticked, so the same selection always produces the same
+            # command line.
+            return " ".join(name for name in self.field.choices
+                            if self.variables[name].get())
         return self.field.coerce(self.variable.get())
 
     def set(self, value):
-        if self.field.kind == "bool":
+        if self.field.kind == "multi":
+            chosen = set(str(value).replace(",", " ").split())
+            for name, variable in self.variables.items():
+                variable.set(name in chosen)
+        elif self.field.kind == "bool":
             self.variable.set(bool(value))
         else:
             self.variable.set(str(value))

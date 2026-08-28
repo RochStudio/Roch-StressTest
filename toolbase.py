@@ -70,6 +70,9 @@ class Field:
             if isinstance(raw, bool):
                 return raw
             return str(raw).strip().lower() in ("1", "true", "yes", "on")
+        if self.kind == "multi":
+            wanted = set(str(raw).replace(",", " ").split())
+            return " ".join(c for c in self.choices if c in wanted)
         if self.kind == "choice":
             text = str(raw)
             return text if text in self.choices else self.default
