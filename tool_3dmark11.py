@@ -55,24 +55,37 @@ class ThreeDMark11(Tool):
         "A looping graphics load: shaders, geometry and the whole board at a "
         "game-like duty cycle, which is how an unstable GPU core clock "
         "usually gets caught. It checks nothing, so what it finds is a driver "
-        "reset or a hang rather than a wrong answer."
+        "reset or a hang rather than a wrong answer. Opens in its own window, "
+        "where Advanced can set a loop count; the command-line runner that "
+        "does it unattended needs the Professional edition."
     )
-    exe_globs = ("3DMark 11*/bin/x64/3DMark11Cmd.exe",)
+    # The application itself, not 3DMarkLauncher.exe beside it. The launcher
+    # is a stub: it starts this and exits immediately, so a run supervised
+    # through it reported "finished with no errors" a second after starting
+    # while the benchmark it had just opened carried on unwatched.
+    exe_globs = ("3DMark 11*/bin/x64/3DMark11.exe",)
     external_globs = tuple(
-        os.path.join(root, "bin", "x64", "3DMark11Cmd.exe")
+        os.path.join(root, "bin", "x64", "3DMark11.exe")
         for root in SEARCH_ROOTS
     )
     console = True
     detection_note = (
         "A looping benchmark has no right answer to check, so what stops the "
-        "run is 3DMark reporting a failed workload, a removed or hung device, "
-        "or the process dying -- the shapes an unstable graphics card "
-        "actually fails in."
+        "run is a failed workload, a removed or hung device, or the process "
+        "dying -- the shapes an unstable graphics card actually fails in. "
+        "Run from its own window there is no output to read, so the time "
+        "limit and a crash are what this program can see."
     )
 
     fields = (
+        Field("command_line", "Use the command-line runner", "bool", False,
+              hint="3DMark11Cmd.exe, which loops unattended -- but it needs "
+                   "the Professional edition. Advanced, which the free "
+                   "legacy key gives, unlocks looping in the window instead, "
+                   "not on the command line."),
         Field("definition", "Preset", "choice", "", choices=[],
-              hint="The benchmark definition to loop."),
+              hint="The benchmark definition to loop. Command-line runner "
+                   "only."),
         Field("loops", "Loops", "int", 0, minimum=0, maximum=10000,
               hint="0 loops forever, which is what a soak wants. Any other "
                    "number stops after that many runs."),
@@ -89,8 +102,9 @@ class ThreeDMark11(Tool):
 
     quick_start = {
         "preset": "Performance",
-        "values": {"loops": 0, "duration": 30, "audio": False},
-        "note": "Performance preset on a loop, 30 minutes, sound off.",
+        "values": {"loops": 0, "duration": 30, "audio": False,
+                   "command_line": False},
+        "note": "Opens 3DMark 11; set the loop in its window. 30 minutes.",
     }
 
     _LABELS = {
@@ -126,13 +140,44 @@ class ThreeDMark11(Tool):
         ]
         return tuple(made) or (Preset("None found", {}, ""),)
 
+    def command_tool(self, root):
+        """3DMark11Cmd.exe, if it is there. Professional edition only."""
+        launcher = self.locate(root)
+        if not launcher:
+            return None
+        path = os.path.join(os.path.dirname(launcher), "3DMark11Cmd.exe")
+        return path if os.path.isfile(path) else None
+
     def build(self, config, root):
         exe = self.locate(root)
         if not exe:
             raise ToolUnavailable(
-                "3DMark 11 was not found. Expected its bin\\x64 folder under "
-                "Program Files\\Futuremark\\3DMark 11."
+                "3DMark 11 was not found. Expected bin\\x64\\3DMark11.exe "
+                "under Program Files\\Futuremark\\3DMark 11."
             )
+
+        if not config.get("command_line"):
+            # The window. Every edition can open it, and Advanced -- which
+            # the free legacy key gives -- can set a loop count in it. The
+            # runner still holds it to a time limit and still notices it
+            # dying, which is most of what supervision is for here.
+            return LaunchSpec(
+                argv=[exe],
+                cwd=os.path.dirname(exe),
+                console=False,
+                error_key=self.key,
+                summary="3DMark 11 (set the loop in its own window)",
+                duration_seconds=int(config.get("duration", 0)) * 60,
+                leave_open=True,
+            )
+
+        cmd = self.command_tool(root)
+        if not cmd:
+            raise ToolUnavailable(
+                "3DMark11Cmd.exe was not found beside 3DMark 11, so there is "
+                "no command-line runner to use."
+            )
+        exe = cmd
 
         available = dict((name, label)
                          for label, name in self.definitions(root))

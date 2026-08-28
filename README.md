@@ -44,7 +44,7 @@ Administrator rights are asked for once at launch. TestMem5 and RAM Test Pro nee
 
 | **Cinebench** | R15, R15 Extreme, R20, R23, R24, R26 | `g_CinebenchCpuXTest=true g_CinebenchMinimumTestDuration=<s>` (R20+), `-cb_cpux` (R15) |
 | **memtest Vulkan** | first GPU / second GPU | the device index as a bare argument |
-| **3DMark 11** | Performance / Extreme / Entry | `3DMark11Cmd.exe --definition=<xml> --loop=0` |
+| **3DMark 11** | Performance / Extreme / Entry | opens `bindDMark11.exe`; `3DMark11Cmd.exe --loop=0` with Professional |
 
 Not everything here checks its own answers, and the difference matters. Prime95, y-cruncher, Linpack, TestMem5, RAM Test Pro and memtest_vulkan all verify what they computed and can tell you the machine is *wrong*. Cinebench and 3DMark 11 are benchmarks: they load the hardware hard and report a score, but a pass means "it finished", not "the arithmetic was right". Use them for heat, sustained clocks and driver stability; use the others for correctness.
 
@@ -72,7 +72,7 @@ What each tool runs from Quick Start, and what its own tab opens on:
 | Linpack Extended | 4 GB, 30 min, residual checks on (Intel only) |
 | Cinebench | R23, all cores, 30 min |
 | memtest Vulkan | first GPU, 30 min |
-| 3DMark 11 | Performance, looping, 30 min |
+| 3DMark 11 | opens its window, 30 min |
 
 TM5's cycle count lives inside the `.cfg`, so overriding it means writing a copy. That copy goes to `bin/Roch active.cfg`, with only the `Cycles=` line changed and every other byte identical. The stock profiles are never edited: a cycle count set here is a property of the run, not of the profile.
 
