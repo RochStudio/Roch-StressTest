@@ -392,10 +392,6 @@ class StressApp:
         self.appearance_menu.set(self.appearance_mode)
         self.appearance_menu.pack(side="right", padx=(4, 8), pady=3)
 
-        widgets.action_button(
-            bar, "Open logs", self.open_logs, width=90
-        ).pack(side="right", padx=(4, 0), pady=3)
-
         # Memory, live, next to the button that frees it. A stress test only
         # tests the memory it can actually get: Windows counts the standby
         # list as used, so on a machine that has been up a while, asking for
@@ -470,14 +466,6 @@ class StressApp:
                                        fg_color=theme.BG_COLOR)
         frame.pack(fill="both", expand=True)
         self._auto_hide_scrollbar(frame)
-
-        ctk.CTkLabel(
-            frame,
-            text=("One test at a time. Close a tool's own window to end a run "
-                  "it is driving."),
-            font=theme.COMPACT_FONT, text_color=theme.SUBTITLE_COLOR,
-            anchor="w", justify="left", wraplength=900,
-        ).pack(fill="x", padx=8, pady=(4, 3))
 
         # Two columns of cards rather than one tall list, so all five tools
         # are on screen at once and Quick Start needs no scrolling to use.
@@ -722,12 +710,6 @@ class StressApp:
             self.log("Transcript saved to " + path)
         except OSError as error:
             self.log("Could not save the transcript: " + str(error))
-
-    def open_logs(self):
-        try:
-            os.startfile(settings.log_dir())
-        except Exception as error:
-            self.log("Could not open the log folder: " + str(error))
 
     def report_missing(self):
         for tool in toolset.missing(self.root_path):
