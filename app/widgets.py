@@ -212,15 +212,6 @@ class FieldRow:
             except Exception:
                 pass
 
-    def set_choices(self, choices, selected=None):
-        if self.field.kind != "choice":
-            return
-        self.field.choices = list(choices)
-        self.widget.configure(values=list(choices) or [""])
-        if selected is not None:
-            self.variable.set(selected)
-        elif choices and self.variable.get() not in choices:
-            self.variable.set(choices[0])
 
 
 def action_button(parent, text, command, kind="normal", width=110):

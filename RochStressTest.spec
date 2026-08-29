@@ -1,4 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
+import re as _re
 # PyInstaller spec for Roch StressTest.
 # Build with: py -m PyInstaller -y RochStressTest.spec
 
@@ -52,6 +54,24 @@ a = Analysis(
     noarchive=False,
     optimize=0,
 )
+# file_version_info.txt says it is generated from version.py. It was not:
+# it held a hand-typed (1, 0, 0, 0), so bumping __version__ moved the window
+# title and left the binary claiming the old number. Written here, from the
+# same VERSION_TUPLE the docstring in version.py promises is used.
+import io as _io
+import runpy as _runpy
+
+_version = _runpy.run_path(os.path.join("core", "version.py"))
+_numbers = ", ".join(str(part) for part in _version["VERSION_TUPLE"])
+_resource = _io.open("file_version_info.txt", encoding="utf-8").read()
+_resource = _re.sub(r"(file|prod)vers=\([^)]*\)",
+                    lambda m: m.group(1) + "vers=(" + _numbers + ")", _resource)
+_resource = _re.sub(r"(StringStruct\(u?'(?:File|Product)Version', u?')[^']*'",
+                    lambda m: m.group(1) + _version["__version__"] + "'",
+                    _resource)
+_io.open("file_version_info.txt", "w", encoding="utf-8",
+         newline="\n").write(_resource)
+
 pyz = PYZ(a.pure)
 
 exe = EXE(

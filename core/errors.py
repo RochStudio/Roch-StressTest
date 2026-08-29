@@ -196,16 +196,6 @@ MEMTEST_VULKAN_ABORTED = [
 ]
 
 
-# 3DMark's command-line runner is a Professional-edition feature. On a Basic
-# install it prints its usage and refuses, which is a licence problem and not
-# a word about the graphics card.
-THREEDMARK_SETUP = [
-    r"Professional edition is required",
-    r"Registration key is invalid",
-    r"Unrecognized argument",
-]
-
-
 # Lines that look like a failure and are not one. Checked first, so a tool
 # that complains about something harmless on its way up cannot be mistaken
 # for a machine that is wrong.

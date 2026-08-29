@@ -14,7 +14,6 @@ UI tells the truth about it rather than pretending.
 """
 
 import os
-import shutil
 import subprocess
 
 
@@ -231,12 +230,6 @@ class Tool:
         """The field defaults as a plain dict."""
         return {field.key: field.default for field in self.fields}
 
-    def preset_named(self, name):
-        for preset in self.presets:
-            if preset.name == name:
-                return preset
-        return None
-
     def all_presets(self, root):
         """Static presets, or ones discovered from the tool's own folder."""
         if hasattr(self, "presets_for"):
@@ -366,9 +359,3 @@ class Tool:
         screen, which is what we want for the tools we read directly.
         """
         return getattr(subprocess, "CREATE_NO_WINDOW", 0)
-
-    @staticmethod
-    def _copy_if_missing(source, destination):
-        if os.path.isfile(source) and not os.path.isfile(destination):
-            os.makedirs(os.path.dirname(destination), exist_ok=True)
-            shutil.copy2(source, destination)

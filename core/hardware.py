@@ -58,12 +58,6 @@ def available_ram_mb():
     return int(status.ullAvailPhys // (1024 * 1024))
 
 
-def memory_load_percent():
-    """How full memory is, 0-100. Shown live in the status strip."""
-    status = _memory_status()
-    return int(status.dwMemoryLoad) if status else 0
-
-
 def logical_cores():
     """Logical processors, which is what a worker count is counted in."""
     return os.cpu_count() or 1
@@ -108,11 +102,6 @@ def physical_cores():
     except Exception:
         pass
     return max(1, logical_cores() // 2)
-
-
-def has_smt():
-    """True when the machine reports more threads than cores."""
-    return logical_cores() > physical_cores()
 
 
 def cpu_vendor():

@@ -22,7 +22,7 @@ gives results.txt a stable path to watch for failures.
 import os
 
 from core import settings
-from core.toolbase import Field, LaunchSpec, Preset, Tool, ToolUnavailable
+from core.toolbase import Field, LaunchSpec, Tool, ToolUnavailable
 
 
 class Prime95(Tool):

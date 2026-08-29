@@ -776,10 +776,6 @@ class StressApp:
         self.start_single(tool, tool.quick_config(self.root_path),
                           self.quick_label(tool))
 
-    def stop_all(self):
-        self.runner.stop()
-        self.log("Stop requested.")
-
     # -- event pump ------------------------------------------------------
 
     def _pump_events(self):

@@ -31,16 +31,6 @@ SEARCH_ROOTS = (
 )
 
 # The definition file names, and what each one is for.
-DEFINITIONS = {
-    "performance_definition.xml": "Performance -- 1280x720, the usual preset.",
-    "extreme_definition.xml": "Extreme -- 1920x1080, a much heavier load.",
-    "entry_definition.xml": "Entry -- 1024x600, for weak cards.",
-    "custom_performance_definition.xml": "Custom performance definition.",
-    "custom_extreme_definition.xml": "Custom extreme definition.",
-    "custom_entry_definition.xml": "Custom entry definition.",
-}
-
-
 class ThreeDMark11(Tool):
     key = "3dmark11"
     name = "3DMark 11"

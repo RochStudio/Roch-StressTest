@@ -27,7 +27,7 @@ which is what the runner does anyway.
 
 import os
 
-from core import settings
+from core import errors
 from core.toolbase import Field, LaunchSpec, Preset, Tool, ToolUnavailable
 
 
@@ -118,6 +118,12 @@ class MemtestVulkan(Tool):
                 + ", " + (str(memory) + " MB" if memory else "auto size")
             ),
             duration_seconds=int(config.get("duration", 0)) * 60,
+            # Written years ago and never wired in. Without them, "no device
+            # selected" or an early exit during init leaves a non-zero exit
+            # code and nothing to explain it, and the runner reports the
+            # graphics card as faulty when memtest_vulkan simply never
+            # started.
+            abort_patterns=errors.MEMTEST_VULKAN_ABORTED,
             creation_flags=(self._new_console_flags() if show
                             else self._no_window_flags()),
         )

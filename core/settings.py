@@ -63,11 +63,6 @@ def save_setting(key, value):
         print(f"Could not save setting {key}: {error}")
 
 
-def get_setting(key, default=None):
-    value = load_settings().get(key, default)
-    return default if value is None else value
-
-
 def load_appearance_mode():
     mode = load_settings().get("appearance_mode", "Dark")
     if str(mode).lower() in ("light", "dark"):
