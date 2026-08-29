@@ -11,13 +11,16 @@ Roch StressTest/
 ├─ winui.py                filling in RAM Test Pro's window, which has no CLI
 ├─ runner.py               starts a test, watches it, enforces the time limit
 ├─ errors.py               the patterns that decide a run has failed
-├─ toolset.py              the registry of tools, in tab order
+├─ toolset.py              the registry of tools, and the Quick Start columns
 ├─ tool_*.py               one adapter per tool
 ├─ theme.py                the shared Roch palette
 ├─ widgets.py              the field/section widgets the panels are built from
 ├─ hardware.py             cores, RAM and CPU vendor, for the defaults
 └─ <tool folders>          Prime95, y-cruncher, TestMem5, RAM Test Pro,
-                          both Linpacks, memtest_vulkan
+                          both Linpacks, memtest_vulkan. Cinebench and OCCT
+                          go here too but are not committed -- they are
+                          gigabytes, and several files are past GitHub's
+                          100 MB limit.
 ```
 
 ## Run it
@@ -30,26 +33,30 @@ Or build a standalone EXE with `BUILD_EXE.bat` and copy `dist\RochStressTest.exe
 
 Administrator rights are asked for once at launch. TestMem5 and RAM Test Pro need them to lock physical pages, Prime95 to set affinity. Asking once beats a tool failing three hours into a run for want of a privilege.
 
-## What each tab does
+## What each tool does
 
-**Quick Start** is the front page: two columns of cards, one per tool, each running that tool's default configuration with a single button. Each tool's own tab opens on the same defaults, so the two never disagree about what "default" means. One test runs at a time.
+**Quick Start** is the front page and, for half the tools, the only page: two columns of cards, one per tool. One test runs at a time.
+
+A tool gets a tab of its own only when this program has settings worth offering. Prime95, Linpack Xtreme, OCCT, Cinebench and 3DMark 11 do not: each decides something that cannot be known from here -- Prime95 derives its FFT ranges from the cache it finds, Linpack Xtreme's menu picks the build matching the processor, 3DMark's looping needs a licence most installations lack. Their cards have an **Open** button and nothing else, and the run is set up in the window that owns those settings. A tab of fields that are then discarded would be worse than no tab. Where a tool does have a tab, it opens on the same defaults as its card, so the two never disagree about what "default" means.
 
 | Tool | Presets | Driven by |
 |---|---|---|
 | **Prime95** | none -- chosen in Prime95's own dialog | `prime95 -W<dir>`, with no `-t`, so it opens its torture dialog and waits |
-| **y-cruncher** | no presets — all eight algorithms as tick boxes | `y-cruncher … stress -M -D -TL <algorithms>` |
+| **y-cruncher** | no presets — all eight algorithms as tick boxes, plus a button per `.bat` beside it | `y-cruncher … stress -M -D -TL <algorithms>` |
 | **TestMem5** | every `.cfg` in `bin/`, anta777 profiles first | `Config File="name.cfg"`, cycle count rewritten |
 | **RAM Test Pro** | every `.cfg` in `config/` | `config/current_config.txt`, plus its window filled in |
 | **Linpack Xtreme** | none -- answered at its own menu | opens `LinpackXtreme_x64.exe` |
-| **Linpack Extended** | the same, Intel CPUs only | its own Node driver, in cmd: `config.json` written from the fields, then `node linpack.js` |
+| **Linpack Extended** | 2 / 4 / 6 / 8 / 11 / 14 / 30 GB, Intel CPUs only | its own Node driver, in cmd: `config.json` written from the fields, then `node linpack.js` |
 | **OCCT** | none -- chosen in OCCT's own window | opens `OCCT.exe` |
 | **Cinebench** | none -- one button per version installed (R11.5 through R26) | opens that version's executable |
 | **memtest Vulkan** | first GPU / second GPU | the device index as a bare argument |
 | **3DMark 11** | none -- chosen in 3DMark's own window | opens `bin\x64\3DMark11.exe` |
 
-y-cruncher has no presets: its algorithms are not alternatives, so all eight are tick boxes and any combination runs. Ticking none runs the lot, which is y-cruncher's own convention. Cinebench chooses between one scored run and looping until the time limit — a single run simply leaves the minimum-duration argument off, and R15 can only ever do that.
+y-cruncher has no presets: its algorithms are not alternatives, so all eight are tick boxes and any combination runs. Ticking none runs the lot, which is y-cruncher's own convention. Its card also carries a button for every `.bat` sitting beside `y-cruncher.exe`, read from the folder rather than listed here — drop one in and it gets a button, named after the file. Those run exactly what the file says, with `logfile:` and `skip-warnings` added and nothing taken away.
 
-Not everything here checks its own answers, and the difference matters. Prime95, y-cruncher, Linpack, TestMem5, RAM Test Pro, OCCT and memtest_vulkan all verify what they computed and can tell you the machine is *wrong*. Cinebench and 3DMark 11 do not: they are benchmarks. they load the hardware hard and report a score, but a pass means "it finished", not "the arithmetic was right". Use them for heat, sustained clocks and driver stability; use the others for correctness.
+Cinebench gets a button per version installed, R11.5 through R26, each opening that version. It is looked for beside this program and under `Program Files\Maxon`. BenchMate's copies are deliberately *not* used: they are meant to be launched by BenchMate with its own environment, and run directly they cannot resolve their string resources -- Cinebench 2024 comes up titled `StrNotFound`, with a licence agreement whose Accept and Decline buttons are both labelled `StrNotFound` as well.
+
+Not everything here checks its own answers, and the difference matters. Prime95, y-cruncher, Linpack, TestMem5, RAM Test Pro, OCCT and memtest_vulkan all verify what they computed and can tell you the machine is *wrong*. Cinebench and 3DMark 11 do not: they are benchmarks, loading the hardware hard and reporting a score, but a pass means "it finished", not "the arithmetic was right". Use them for heat, sustained clocks and driver stability; use the others for correctness.
 
 Memory figures are computed from what is actually free when you pick a preset, not from a constant. Linpack's problem size and leading dimension are derived from the memory box using Intel's own rule — the nearest odd multiple of 16 at or above the problem size on AVX parts.
 
@@ -73,7 +80,7 @@ Nothing about it is destructive: the purged pages are cached copies of data alre
 
 ## Defaults
 
-What each tool runs from Quick Start, and what its own tab opens on:
+What each tool runs from Quick Start, and what its tab opens on where it has one:
 
 | Tool | Default |
 |---|---|
