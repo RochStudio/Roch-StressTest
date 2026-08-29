@@ -16,7 +16,7 @@ Roch StressTest/
 |   |- hardware.py         cores, RAM and CPU vendor, for the defaults
 |   |- memory.py           the memory cleaner and the live RAM readout
 |   |- settings.py         where runs, logs and settings are kept
-|   |- winui.py            filling in RAM Test Pro's window, which has no CLI
+|   |- winui.py            finding a running tool's windows
 |   \- version.py          the product name and version, written once
 |
 |- app/                    how it is drawn
@@ -56,8 +56,8 @@ A tool gets a tab of its own only when this program has settings worth offering.
 |---|---|---|
 | **Prime95** | none -- chosen in Prime95's own dialog | `prime95 -W<dir>`, with no `-t`, so it opens its torture dialog and waits |
 | **y-cruncher** | no presets — all eight algorithms as tick boxes, plus a button per `.bat` beside it | `y-cruncher … stress -M -D -TL <algorithms>` |
-| **TestMem5** | every `.cfg` in `bin/`, anta777 profiles first | `Config File="name.cfg"`, cycle count rewritten |
-| **RAM Test Pro** | every `.cfg` in `config/` | `config/current_config.txt`, plus its window filled in |
+| **TestMem5** | none -- the profile is picked in TM5's own window | opens `TM5.exe` with no arguments |
+| **RAM Test Pro** | none -- set in its own window | opens `RAM Test Pro.exe` |
 | **Linpack Xtreme** | none -- answered at its own menu | opens `LinpackXtreme_x64.exe` |
 | **Linpack Extended** | 2 / 4 / 6 / 8 / 11 / 14 / 30 GB, Intel CPUs only | its own Node driver, in cmd: `config.json` written from the fields, then `node linpack.js` |
 | **OCCT** | none -- chosen in OCCT's own window | opens `OCCT.exe` |
@@ -99,8 +99,8 @@ What each tool runs from Quick Start, and what its tab opens on where it has one
 |---|---|
 | Prime95 | opens its torture dialog, no time limit |
 | y-cruncher | VSTv3 ticked, 28 GB, 30 min |
-| TestMem5 | 1usmus v3 @ 1usmus, 25 cycles, no time limit |
-| RAM Test Pro | DDR4_DDR5_universal, 28 GB, threads auto, 1 cycle, stop on first error |
+| TestMem5 | opens its window, no time limit |
+| RAM Test Pro | opens its window, no time limit |
 | Linpack Xtreme | opens its menu, no time limit |
 | Linpack Extended | 11 GB (problem size 38736), 30 min, residual checks on, alignment 1, KMP_AFFINITY blank (Intel only) |
 | OCCT | opens its window, no time limit |
@@ -120,7 +120,7 @@ The point of the program. What each tab claims is what it does:
 - **Linpack** additionally has every result row parsed. Linpack does *not* stop on a bad solve — it writes something other than `pass` in the eighth column and carries on — so that column is checked, and so is the residual, which must not drift between identical trials.
 - **Prime95** is watched through `results.txt`, which it writes on every error. A worker that fails while you are away is still caught.
 - **TestMem5** is read from `Log.txt`, which 0.13.1 appends beside `TM5.exe`. `Error in test #N`, a non-zero error total, and a crash blamed on the tested memory all stop the run. TM5's *own* failures — memory it could not allocate or lock — are deliberately not reported as instability, because TM5 says outright that they are not.
-- **RAM Test Pro** is read from `logs/log.txt`: a non-zero `Test errors detected` and its own `ERROR` lines. `ERROR! Free up RAM…` is *it* failing rather than the memory, and is reported as a setup problem. Its settings are typed into its window and read back before Start is pressed, and if it refuses them — "Memory block size must be at least 50 MB" is the usual one — the run stops with that message instead of appearing to start.
+- **RAM Test Pro** is read from `logs/log.txt`: a non-zero `Test errors detected` and its own `ERROR` lines. `ERROR! Free up RAM…` is *it* failing rather than the memory, and is reported as a setup problem. Its settings are entered in its own window: it has no command line, no usable settings file and no registry keys, and the four boxes that matter exist nowhere else.
 
 Every tool runs in its own visible window. The three that are windowed do that by themselves; the two console ones are given a console, which is why neither is piped: a child whose stdout is redirected leaves its own console blank. y-cruncher is watched through its `logfile:` instead, and Linpack — which has no log option, and whose pass/fail column exists nowhere but its output — is teed with PowerShell's `Tee-Object`. That writes UTF-16, so the log reader detects encoding from the byte-order mark. Turn the window off per tool with "Show ...'s window" and it goes back to a hidden console read straight off the pipe.
 
