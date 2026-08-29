@@ -49,3 +49,9 @@ Linpack-Extended-master/dependencies/temp
 Linpack-Extended-master/config.json.roch-original
 LinpackXtreme*/linpack.ini
 LinpackXtreme*/results.txt
+
+# RAM Test Pro writes an individual licence file here, and its own readme
+# calls it exactly that. It is the licence, not part of the package: it must
+# not be committed, and it was purged from history before this repository was
+# made public.
+ram_test_pro_*/**/license.bin
