@@ -11,15 +11,15 @@ hardware entirely.
 import os
 import sys
 
-from tool_3dmark11 import ThreeDMark11
-from tool_cinebench import Cinebench
-from tool_linpack import LinpackExtended, LinpackXtreme
-from tool_memtest_vulkan import MemtestVulkan
-from tool_occt import OCCT
-from tool_prime95 import Prime95
-from tool_ramtest import RamTestPro
-from tool_testmem5 import TestMem5
-from tool_ycruncher import YCruncher
+from tools.threedmark11 import ThreeDMark11
+from tools.cinebench import Cinebench
+from tools.linpack import LinpackExtended, LinpackXtreme
+from tools.memtest_vulkan import MemtestVulkan
+from tools.occt import OCCT
+from tools.prime95 import Prime95
+from tools.ramtest import RamTestPro
+from tools.testmem5 import TestMem5
+from tools.ycruncher import YCruncher
 
 TOOLS = (
     Prime95(),
@@ -69,7 +69,9 @@ def tools_root():
     """
     if getattr(sys, "frozen", False):
         return os.path.dirname(sys.executable)
-    return os.path.dirname(os.path.abspath(__file__))
+    # This file is tools/__init__.py, so the folder the tool distributions sit
+    # in is its grandparent rather than its own directory.
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def available(root=None):

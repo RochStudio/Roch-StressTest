@@ -28,9 +28,9 @@ import glob
 import os
 import time
 
-import errors
-import winui
-from toolbase import Field, LaunchSpec, Preset, Tool, ToolUnavailable
+from core import errors
+from core import winui
+from core.toolbase import Field, LaunchSpec, Preset, Tool, ToolUnavailable
 
 WINDOW_TITLE = "RAM Test Pro"
 

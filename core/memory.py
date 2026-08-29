@@ -32,7 +32,7 @@ a machine about to be put under a stress test is not a cost at all.
 import ctypes
 from ctypes import wintypes
 
-import hardware
+from core import hardware
 
 _NTDLL = ctypes.WinDLL("ntdll", use_last_error=True)
 _ADVAPI32 = ctypes.WinDLL("advapi32", use_last_error=True)

@@ -21,9 +21,9 @@ import math
 import os
 import shutil
 
-import hardware
-import settings
-from toolbase import Field, LaunchSpec, Preset, Tool, ToolUnavailable
+from core import hardware
+from core import settings
+from core.toolbase import Field, LaunchSpec, Preset, Tool, ToolUnavailable
 
 
 TEE_JS = '// Written by Roch StressTest. cmd has no tee, and Linpack Extended has\n// no log option, so its output is split here: on to the console it is\n// running in, and into a file the runner can read. node is used because\n// the package already ships it -- adding a binary for this would be\n// worse, and PowerShell is what the console was moved away from.\nconst fs = require("fs");\nconst out = fs.createWriteStream(process.argv[2]);\nprocess.stdin.on("data", function (chunk) {\n  process.stdout.write(chunk);\n  out.write(chunk);\n});\nprocess.stdin.on("end", function () { out.end(); });\n'

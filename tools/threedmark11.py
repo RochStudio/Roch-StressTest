@@ -22,7 +22,7 @@ memtest_vulkan is the one that checks its answers.
 """
 import os
 
-from toolbase import Field, LaunchSpec, Tool, ToolUnavailable
+from core.toolbase import Field, LaunchSpec, Tool, ToolUnavailable
 
 SEARCH_ROOTS = (
     r"C:\Program Files\Futuremark\3DMark 11",

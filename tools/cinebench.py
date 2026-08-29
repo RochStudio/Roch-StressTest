@@ -33,7 +33,7 @@ their own answers.
 import glob
 import os
 
-from toolbase import Field, LaunchSpec, Tool, ToolUnavailable
+from core.toolbase import Field, LaunchSpec, Tool, ToolUnavailable
 
 # Where each version's executable is, in the order they should be searched.
 # BenchMate keeps a version-numbered folder per release, which is why these

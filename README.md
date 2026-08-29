@@ -6,21 +6,34 @@ It does not implement a single test. Every tool runs exactly as it would if you 
 
 ```
 Roch StressTest/
-├─ main.py                 the window: Quick Start, tool tabs, log
-├─ memory.py               the memory cleaner and the live RAM readout
-├─ winui.py                filling in RAM Test Pro's window, which has no CLI
-├─ runner.py               starts a test, watches it, enforces the time limit
-├─ errors.py               the patterns that decide a run has failed
-├─ toolset.py              the registry of tools, and the Quick Start columns
-├─ tool_*.py               one adapter per tool
-├─ theme.py                the shared Roch palette
-├─ widgets.py              the field/section widgets the panels are built from
-├─ hardware.py             cores, RAM and CPU vendor, for the defaults
-└─ <tool folders>          Prime95, y-cruncher, TestMem5, RAM Test Pro,
-                          both Linpacks, memtest_vulkan. Cinebench and OCCT
-                          go here too but are not committed -- they are
-                          gigabytes, and several files are past GitHub's
-                          100 MB limit.
+|- main.py                 the window: Quick Start, tool cards, log
+|- selftest.py             builds every preset and checks the defaults agree
+|
+|- core/                   running a test and knowing what the machine is
+|   |- runner.py           starts a test, watches it, enforces the time limit
+|   |- errors.py           the patterns that decide a run has failed
+|   |- toolbase.py         what every tool adapter is made of
+|   |- hardware.py         cores, RAM and CPU vendor, for the defaults
+|   |- memory.py           the memory cleaner and the live RAM readout
+|   |- settings.py         where runs, logs and settings are kept
+|   |- winui.py            filling in RAM Test Pro's window, which has no CLI
+|   \- version.py          the product name and version, written once
+|
+|- app/                    how it is drawn
+|   |- theme.py            the shared Roch palette
+|   \- widgets.py          the field/section widgets the cards are built from
+|
+|- tools/                  one adapter per tool
+|   |- __init__.py         the registry, and the Quick Start columns
+|   \- prime95.py, ycruncher.py, testmem5.py, ramtest.py, linpack.py,
+|                          occt.py, cinebench.py, memtest_vulkan.py,
+|                          threedmark11.py
+|
+\- <tool folders>          Prime95, y-cruncher, TestMem5, RAM Test Pro,
+                           both Linpacks, memtest_vulkan. Cinebench and OCCT
+                           go here too but are not committed -- they are
+                           gigabytes, and several files are past GitHub's
+                           100 MB limit.
 ```
 
 ## Run it

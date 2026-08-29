@@ -8,7 +8,7 @@ hundred lines of grid arithmetic.
 
 import customtkinter as ctk
 
-import theme
+from app import theme
 
 
 def section(parent, title):

@@ -18,10 +18,10 @@ to run the lot.
 import glob
 import os
 
-import errors
-import hardware
-import settings
-from toolbase import Field, LaunchSpec, Preset, Tool, ToolUnavailable
+from core import errors
+from core import hardware
+from core import settings
+from core.toolbase import Field, LaunchSpec, Preset, Tool, ToolUnavailable
 
 # The valid values for [algorithm], in the order the manual lists them. N63,
 # N64 and VST are aliases y-cruncher still accepts; only the canonical names

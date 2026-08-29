@@ -22,7 +22,7 @@ import subprocess
 import threading
 import time
 
-import errors
+from core import errors
 
 IDLE = "idle"
 RUNNING = "running"

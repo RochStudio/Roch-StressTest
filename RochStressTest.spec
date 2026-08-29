@@ -11,26 +11,32 @@ datas += [
     ('icon.ico', '.'),
 ]
 
-# The tool adapters are reached through the registry in toolset.py, which
+# The tool adapters are reached through the registry in tools/__init__.py, which
 # imports each one by name, so the dependency scan does find them. They are
 # listed anyway to say what the build is expected to carry -- and because a
 # missing adapter shows up as a silently absent tab rather than as an error.
 hiddenimports = [
-    'version',
+    'core.version',
     'customtkinter',
-    'theme',
-    'widgets',
-    'settings',
-    'hardware',
-    'errors',
-    'runner',
-    'toolbase',
-    'toolset',
-    'tool_prime95',
-    'tool_ycruncher',
-    'tool_testmem5',
-    'tool_ramtest',
-    'tool_linpack',
+    'app.theme',
+    'app.widgets',
+    'core.settings',
+    'core.hardware',
+    'core.errors',
+    'core.runner',
+    'core.toolbase',
+    'core.memory',
+    'core.winui',
+    'tools',
+    'tools.prime95',
+    'tools.ycruncher',
+    'tools.testmem5',
+    'tools.ramtest',
+    'tools.linpack',
+    'tools.occt',
+    'tools.cinebench',
+    'tools.memtest_vulkan',
+    'tools.threedmark11',
 ]
 
 a = Analysis(

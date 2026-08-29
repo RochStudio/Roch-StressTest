@@ -22,14 +22,14 @@ import queue as queue_module
 
 import customtkinter as ctk
 
-import hardware
-import memory as memory_module
-import runner as runner_module
-import settings
-import theme
-import toolset
-import widgets
-from version import APP_NAME, __version__
+from core import hardware
+from core import memory as memory_module
+from core import runner as runner_module
+from core import settings
+from app import theme
+import tools as toolset
+from app import widgets
+from core.version import APP_NAME, __version__
 
 # How often the UI drains the runner's event queue. Fast enough that output
 # feels live, slow enough to be free.
@@ -123,7 +123,7 @@ class ToolPanel:
         return self.tool.presets
 
     def _build_preset_section(self, parent):
-        from toolbase import Field
+        from core.toolbase import Field
 
         names = [preset.name for preset in self.presets()]
         if not names:

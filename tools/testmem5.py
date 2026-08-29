@@ -32,9 +32,9 @@ import glob
 import os
 import re
 
-import errors
+from core import errors
 
-from toolbase import Field, LaunchSpec, Preset, Tool, ToolUnavailable
+from core.toolbase import Field, LaunchSpec, Preset, Tool, ToolUnavailable
 
 # The one file this adapter writes into TM5's bin folder, used only when
 # a cycle count overrides the profile's own.

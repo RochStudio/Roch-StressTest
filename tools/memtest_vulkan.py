@@ -27,8 +27,8 @@ which is what the runner does anyway.
 
 import os
 
-import settings
-from toolbase import Field, LaunchSpec, Preset, Tool, ToolUnavailable
+from core import settings
+from core.toolbase import Field, LaunchSpec, Preset, Tool, ToolUnavailable
 
 
 class MemtestVulkan(Tool):

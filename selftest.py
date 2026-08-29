@@ -12,7 +12,8 @@ Nothing is executed -- the specs are built and thrown away.
 """
 import os, sys
 import customtkinter as ctk
-import main as m, toolset
+import main as m
+import tools as toolset
 
 root = ctk.CTk()
 root.withdraw()
