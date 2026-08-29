@@ -106,11 +106,14 @@ class RamTestPro(Tool):
             error_key=self.key,
             summary="RAM Test Pro (settings entered in its own window)",
             duration_seconds=int(config.get("duration", 0)) * 60,
-            # No completion pattern. The old one was built from the cycle
+            # No completion pattern: the old one was built from the cycle
             # count this program had just typed in -- "Current Cycle N+1" --
-            # and that count is now RAM Test Pro's own business. Its errors
-            # are still read, and its "Test stopped by user" still says the
-            # run ended rather than passed.
-            abort_patterns=errors.RAMTEST_ABORTED,
+            # and that count is now RAM Test Pro's own business.
+            # No abort pattern. "Test stopped by user" is what
+            # it writes when a test is stopped from inside its own window --
+            # to open Settings, to change a profile, to start a different
+            # run. That was the end of a run when this program was the one
+            # starting it; now that the window is yours, it is the middle of
+            # one. The run ends when the tool does.
             leave_open=True,
         )

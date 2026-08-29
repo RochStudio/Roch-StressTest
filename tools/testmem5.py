@@ -114,6 +114,11 @@ class TestMem5(Tool):
             summary="TestMem5 (profile and cycles set in its own window)",
             duration_seconds=int(config.get("duration", 0)) * 60,
             completion_patterns=errors.TESTMEM5_COMPLETE,
-            abort_patterns=errors.TESTMEM5_ABORTED,
+            # No abort pattern. "Testing stopped by user" is what
+            # it writes when a test is stopped from inside its own window --
+            # to open Settings, to change a profile, to start a different
+            # run. That was the end of a run when this program was the one
+            # starting it; now that the window is yours, it is the middle of
+            # one. The run ends when the tool does.
             leave_open=True,
         )
