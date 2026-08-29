@@ -165,7 +165,11 @@ YCRUNCHER_COMPLETE = [
 CINEBENCH = [
     r"Error loading",
     r"could not be (?:created|initialized)",
-    r"rendering failed",
+    # Written with two literal backspace bytes where word boundaries
+    # were meant, so the compiled pattern held two 0x08 bytes instead
+    # and could never match a line Cinebench prints. Its neighbours
+    # carry no boundaries either, so plain text is what was intended.
+    r"rendering failed",
     r"out of memory",
 ]
 
@@ -200,6 +204,30 @@ THREEDMARK_SETUP = [
     r"Registration key is invalid",
     r"Unrecognized argument",
 ]
+
+
+# Lines that look like a failure and are not one. Checked first, so a tool
+# that complains about something harmless on its way up cannot be mistaken
+# for a machine that is wrong.
+#
+# Cinebench is the one that needs this. R24 and R26 are Cinema 4D 2024/2026,
+# which register their modules at startup and narrate every one they cannot
+# find -- "[reflection registration] could not be initialized because
+# net.maxon.mvp.widgetclasses.intslider is missing" and a dozen like it. They
+# are warnings, they are printed before anything has been rendered, and the
+# application then runs perfectly well. Opening R24 reported FAILED on the
+# strength of one of them.
+#
+# The rule is narrow on purpose: a line Cinebench itself labels WARNING is
+# not a failure. Anything it labels an error still is.
+NOT_FAILURES = {
+    "cinebench": [
+        r"^WARNING:",
+    ],
+}
+
+_EXCUSED = {key: [re.compile(p, re.IGNORECASE) for p in patterns]
+            for key, patterns in NOT_FAILURES.items()}
 
 
 def _compile(patterns):
@@ -243,9 +271,12 @@ def scan(text, tool_key):
     about to stop the process anyway.
     """
     compiled = PATTERNS.get(tool_key, _compile([]))
+    excused = _EXCUSED.get(tool_key, ())
     for line in text.splitlines():
         stripped = line.strip()
         if not stripped:
+            continue
+        if any(pattern.search(stripped) for pattern in excused):
             continue
         for pattern in compiled:
             if pattern.search(stripped):

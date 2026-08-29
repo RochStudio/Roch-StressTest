@@ -32,14 +32,17 @@ their own answers.
 
 import glob
 import os
-import re
 
-from toolbase import Field, LaunchSpec, Preset, Tool, ToolUnavailable
+from toolbase import Field, LaunchSpec, Tool, ToolUnavailable
 
 # Where each version's executable is, in the order they should be searched.
 # BenchMate keeps a version-numbered folder per release, which is why these
 # end in a wildcard rather than a fixed number.
 VERSIONS = (
+    # Oldest first, so the buttons read in the order the versions came out.
+    # R11.5 is the same Cinema 4D-based build as R15 and ships a 32-bit
+    # executable beside the 64-bit one; the 64-bit is the one to run.
+    ("R11.5", ("CINEBENCH R11.5",), "CINEBENCH Windows 64 Bit.exe", "old"),
     ("R15", ("CINEBENCH R15",), "CINEBENCH Windows 64 Bit.exe", "old"),
     ("R15 Extreme", ("CINEBENCH R15 EXTREME",),
      "CINEBENCH Windows 64 Bit.exe", "old"),
@@ -49,17 +52,20 @@ VERSIONS = (
     ("R26", ("CINEBENCH 2026",), "Cinebench.exe", "new"),
 )
 
-# Everywhere a Cinebench install turns up. BenchMate first because it is the
-# one that keeps every version side by side.
+# Where an installed Cinebench turns up. A copy sitting beside this program
+# is preferred over any of these, and is the way to pin an exact build.
+#
+# BenchMate's app folder used to be searched here and is not any more. The
+# copies it keeps are meant to be launched by BenchMate with its own
+# environment; run straight out of that folder they cannot resolve their own
+# string resources, and Cinebench 2024 comes up titled "StrNotFound" with a
+# licence agreement whose Accept and Decline buttons are both labelled
+# "StrNotFound" as well. Finding nothing and saying so beats opening that.
 SEARCH_ROOTS = (
-    r"C:\Program Files (x86)\BenchMate*\apps",
-    r"C:\Program Files\BenchMate*\apps",
-    r"C:\Program Files\MAXON",
-    r"C:\Program Files (x86)\MAXON",
+    r"C:\Program Files\Maxon",
+    r"C:\Program Files (x86)\Maxon",
 )
 
-# "CB 24164.72 (0.00)" -- the score, and the only line worth keeping.
-SCORE = re.compile(r"^\s*CB\s+([\d.]+)", re.IGNORECASE)
 
 
 class Cinebench(Tool):
@@ -80,42 +86,25 @@ class Cinebench(Tool):
     )
 
     fields = (
-        Field("version", "Version", "choice", "R23", choices=[],
-              hint="Which Cinebench to run."),
-        Field("test", "Test", "choice", "All cores",
-              choices=["All cores", "Single core"],
-              hint="All cores is the stress test; single core is a "
-                   "clock-and-boost check."),
-        Field("mode", "Run", "choice", "One run",
-              choices=["One run", "Loop for the time limit"],
-              hint="One run renders the scene once and reports the score, "
-                   "which is what Cinebench is normally used for. Looping "
-                   "re-runs it until the time limit, which is what makes it "
-                   "a soak. R15 can only do one run."),
-        Field("duration", "Stop after", "int", 30, minimum=0, maximum=100000,
+        Field("duration", "Stop after", "int", 0, minimum=0, maximum=100000,
               unit="min",
-              hint="How long to keep looping for. Ignored on a single run, "
-                   "which takes as long as it takes."),
+              hint="0 lets it stay open for as many runs as you want."),
     )
 
+    # Configured in Cinebench's own window, so there is no tab here. Every
+    # version installed gets a button that opens it, and the run is started
+    # there -- which is also the only way to get at the settings a given
+    # version actually has, since they differ between R15 and R26.
+    has_tab = False
+
+    presets = ()
+
     quick_start = {
-        "preset": "R23",
-        "values": {"test": "All cores", "mode": "One run", "duration": 30},
-        "note": "R23, all cores, a single scored run. Switch Run to looping "
-                "on the tab for a soak.",
+        "values": {"duration": 0},
+        "note": "One button per version installed. Each opens that Cinebench; "
+                "start the run in its window. The score it prints is kept in "
+                "the Log tab.",
     }
-
-    _NOTES = {
-        "R15": "2013, and still the quickest comparison. One render, no "
-               "duration setting.",
-        "R15 Extreme": "R15's heavier scene. Also a single render.",
-        "R20": "2019. Larger scene, and the first with a duration setting.",
-        "R23": "2020, and the usual choice for a soak.",
-        "R24": "2024. Adds a GPU test; this runs the CPU one.",
-        "R26": "2026, the current release.",
-    }
-
-    # -- finding the versions --------------------------------------------
 
     @staticmethod
     def _find(folders, exe_name):
@@ -137,9 +126,18 @@ class Cinebench(Tool):
         for label, folders, exe_name, generation in VERSIONS:
             # Beside this program first, so a copy dropped in the folder wins
             # over an installed one.
-            local = sorted(glob.glob(os.path.join(root, "Cinebench*" + label,
-                                                  "**", exe_name),
-                                     recursive=True))
+            # Both the label and the real folder name are tried. Maxon ships
+            # 2024 and 2026 in folders called "Cinebench 2024" and "Cinebench
+            # 2026" -- neither contains "R24" or "R26", so globbing on the
+            # label alone found the installed copies and never a standalone
+            # one dropped in beside this program, which is the copy that is
+            # supposed to win.
+            candidates = []
+            for pattern in ["Cinebench*" + label] + list(folders):
+                candidates += glob.glob(
+                    os.path.join(root, pattern, "**", exe_name),
+                    recursive=True)
+            local = sorted(set(candidates))
             path = local[-1] if local else self._find(folders, exe_name)
             if path:
                 found.append((label, path, generation))
@@ -149,66 +147,53 @@ class Cinebench(Tool):
         found = self.installed(root)
         return found[0][1] if found else None
 
-    def note_for(self, label):
-        return self._NOTES.get(label, "")
-
-    def presets_for(self, root):
-        made = [
-            Preset(label, {"version": label}, self.note_for(label))
-            for label, _path, _gen in self.installed(root)
-        ]
-        return tuple(made) or (Preset("None found", {}, ""),)
-
     # -- launching -------------------------------------------------------
 
+    def quick_actions(self, root):
+        """One button per installed version, each opening that Cinebench."""
+        found = self.installed(root)
+        if not found:
+            return [("Start", self.quick_config(root))]
+        return [(label, dict(self.quick_config(root), version=label))
+                for label, _path, _generation in found]
+
+    def quick_summary(self, root):
+        labels = [label for label, _p, _g in self.installed(root)]
+        if not labels:
+            return "None found"
+        return "Opens " + " / ".join(labels)
+
     def build(self, config, root):
-        found = {label: (path, gen) for label, path, gen in self.installed(root)}
+        found = {label: path for label, path, _gen in self.installed(root)}
         if not found:
             raise ToolUnavailable(
-                "No Cinebench installation was found. Looked beside this "
-                "program and under BenchMate and MAXON in Program Files."
+                "No Cinebench installation was found. Expected a folder "
+                "beside this program, or an installed copy."
             )
 
-        wanted = str(config.get("version", "")).strip()
+        wanted = str(config.get("version", ""))
         if wanted not in found:
-            wanted = next(iter(found))
-        exe, generation = found[wanted]
+            wanted = sorted(found)[0]
+        exe = found[wanted]
 
-        all_cores = str(config.get("test", "All cores")) == "All cores"
-        minutes = int(config.get("duration", 0))
-        looping = str(config.get("mode", "One run")) != "One run"
-
-        if generation == "new":
-            argv = [exe, "g_CinebenchCpuXTest=true" if all_cores
-                    else "g_CinebenchCpu1Test=true"]
-            # Left off entirely for a single run. Given a minimum duration
-            # Cinebench re-renders until it is met, so omitting it is how you
-            # ask for exactly one pass and the score that goes with it.
-            if looping and minutes > 0:
-                # Seconds, despite the log line printing it in milliseconds.
-                argv.append("g_CinebenchMinimumTestDuration="
-                            + str(minutes * 60))
-            held = looping and minutes > 0
-        else:
-            # R15's switches. It renders once and stops; there is nothing to
-            # pass it that would make it hold the load for longer.
-            argv = [exe, "-cb_cpux" if all_cores else "-cb_cpu1"]
-            held = False
-
-        summary = "Cinebench " + wanted + ", " + (
-            "all cores" if all_cores else "single core")
-        summary += (", looping " + str(minutes) + " min" if held
-                    else ", one run")
-
+        # Opened, not driven. Which test a version offers and what it calls
+        # them differs between R15 and R26, and the switches that started a
+        # run from outside only ever fitted some of them -- so the run is
+        # started in the window, where the choices are the ones that version
+        # actually has.
+        #
+        # stdout is still read: Cinebench prints its result there even when
+        # the run was started by hand, so "Rendering (Multiple CPU) : 906.43
+        # pts" reaches the log rather than vanishing with the window. No
+        # completion pattern, though -- treating the first score as the end
+        # of the run would close it under somebody in the middle of a second.
         return LaunchSpec(
-            argv=argv,
+            argv=[exe],
             cwd=os.path.dirname(exe),
             console=True,
             error_key=self.key,
-            summary=summary,
-            # Cinebench ends by itself once its own duration is met, so the
-            # runner's clock is a backstop with room for the render in
-            # progress to finish rather than being cut off mid-frame.
-            duration_seconds=(minutes * 60 + 300) if held else 0,
+            summary="Cinebench " + wanted + " (run it in its own window)",
+            duration_seconds=int(config.get("duration", 0)) * 60,
+            leave_open=True,
             creation_flags=self._no_window_flags(),
         )

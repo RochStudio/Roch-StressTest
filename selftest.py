@@ -22,8 +22,19 @@ root.update_idletasks()
 fails = 0
 for tool in toolset.TOOLS:
     panel = app.panels.get(tool.key)
-    if panel is None:
+    if panel is None and not tool.available(app.root_path):
         print("SKIP", tool.name, "(not available)"); continue
+    if panel is None:
+        # No tab, because the tool is configured in its own window. There is
+        # no tab to check against, but the default still has to build -- that
+        # is what the Quick Start button runs.
+        try:
+            spec = tool.build(tool.quick_config(app.root_path), app.root_path)
+            print("OK  ", tool.name.ljust(13), "no tab:", spec.summary)
+        except Exception as error:
+            fails += 1
+            print("FAIL", tool.name.ljust(13), "no tab, default:", repr(error))
+        continue
     blocked = tool.unsupported_reason(app.root_path)
     if blocked:
         # A tool that cannot run here must refuse to build, not build
@@ -100,8 +111,14 @@ for tool in toolset.TOOLS:
         except (TypeError, ValueError):
             return left != right
 
+    # A field the preset locks is filled in by the tool itself -- Prime95
+    # works its own FFT ranges out from the cache it finds -- so whatever is
+    # left in the box never reaches the run, and the two sides having
+    # different leftovers in it means nothing.
+    locked = set(tool.locked_fields(tool.quick_preset_name(app.root_path)))
+
     differs = {k: (quick.get(k), tab.get(k)) for k in quick
-               if k in tab and apart(k, quick[k], tab[k])}
+               if k in tab and k not in locked and apart(k, quick[k], tab[k])}
     if differs:
         fails += 1
         print("FAIL", tool.name.ljust(13), "tab disagrees with Quick Start:", differs)

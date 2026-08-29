@@ -21,7 +21,6 @@ gives results.txt a stable path to watch for failures.
 
 import os
 
-import hardware
 import settings
 from toolbase import Field, LaunchSpec, Preset, Tool, ToolUnavailable
 
@@ -41,80 +40,38 @@ class Prime95(Tool):
     )
 
     fields = (
-        Field("min_fft", "Min FFT size", "int", 4, minimum=4, maximum=65536,
-              unit="K", hint="Smallest transform in the sweep."),
-        Field("max_fft", "Max FFT size", "int", 32, minimum=4, maximum=65536,
-              unit="K", hint="Largest transform in the sweep."),
-        Field("memory", "Memory to use", "int", 0, minimum=0, maximum=1048576,
-              unit="MB",
-              hint="0 runs in place, which keeps the test inside cache."),
-        Field("time_per_fft", "Minutes per FFT", "int", 6, minimum=1,
-              maximum=600, unit="min",
-              hint="How long each transform size is held before moving on."),
-        Field("cores", "Cores to test", "int", hardware.physical_cores(),
-              minimum=1, maximum=512),
-        Field("hyperthreading", "Use hyperthreading / SMT", "bool",
-              hardware.has_smt(),
-              hint="Runs two threads per core, as the torture dialog does."),
-        Field("alternate_in_place", "Alternate in-place and RAM", "bool", True,
-              hint="Prime95's own default when a run is given memory to use."),
-        Field("duration", "Stop after", "int", 60, minimum=0, maximum=100000,
+        Field("duration", "Stop after", "int", 0, minimum=0, maximum=100000,
               unit="min",
-              hint="The only way a torture test ends. Prime95 has no cycle "
-                   "count: it walks the FFT range, minutes-per-FFT at each "
-                   "size, then starts again. 0 runs until you press Stop."),
-        Field("extra", "Extra prime.txt lines", "text", "",
-              hint="Passed through verbatim, e.g. TortureWeak=1048576."),
+              hint="0 lets whatever you chose in Prime95's dialog run until "
+                   "you press Stop."),
     )
 
-    # What the Quick Start page runs, and what this tab opens on.
+    # Configured in Prime95's own window, so there is no tab here. Its torture
+    # dialog cannot be preset from a file -- it opens on Blend whatever
+    # prime.txt holds, and resets to Blend every time it is opened, even
+    # mid-run -- so a tab of FFT sizes and memory figures could never be shown
+    # to agree with what Prime95 was actually going to do. Choosing the test
+    # in the one place that decides it is the honest arrangement.
+    has_tab = False
+
+    presets = ()
+
     quick_start = {
-        "preset": "Large FFTs (2048K-8192K)",
-        "values": {"duration": 30},
-        "note": "Memory controller and RAM, 30 minutes. Prime95 has no cycle "
-                "count -- it sweeps the FFT range and starts over until the "
-                "time is up.",
+        "values": {"duration": 0},
+        "note": "Opens Prime95 with its torture dialog up, so the test is the "
+                "one you pick. Failures are still read from results.txt, and "
+                "Stop ends it.",
     }
 
-    # The four the torture dialog offers, plus one for DDR5 boards where the
-    # interesting failures live above 8192K, and Custom for everything else.
-    presets = (
-        Preset("Smallest FFTs (4K-32K)",
-               {"min_fft": 4, "max_fft": 32, "memory": 0, "time_per_fft": 4},
-               "Stays in L1/L2. The heat and vcore test, and the one that "
-               "fails an unstable core clock fastest."),
-        Preset("Small FFTs (32K-1024K)",
-               {"min_fft": 32, "max_fft": 1024, "memory": 0,
-                "time_per_fft": 6},
-               "L1 through L3, maximum sustained power draw."),
-        Preset("Large FFTs (2048K-8192K)",
-               {"min_fft": 2048, "max_fft": 8192, "time_per_fft": 6},
-               "Leans on the memory controller with real RAM in play."),
-        Preset("Blend (4K-8192K)",
-               {"min_fft": 4, "max_fft": 8192, "time_per_fft": 6},
-               "Some of everything, and the most RAM of the four."),
-        Preset("Huge FFTs (8192K-32768K)",
-               {"min_fft": 8192, "max_fft": 32768, "time_per_fft": 10},
-               "Past the cache entirely: an IMC and DIMM test on DDR5."),
-        Preset("Custom", {}, "Whatever is in the boxes below."),
-    )
+    def quick_actions(self, root):
+        """One button, and it opens the tool rather than starting a run."""
+        return [("Open", self.quick_config(root))]
 
-    def suggested_memory(self, preset_name):
-        """The memory figure a preset should start with, in MB.
-
-        Prime95 asks for a number, not a share, so this reads the machine at
-        the moment the preset is picked. A quarter of what is free leaves
-        Windows and the browser you forgot to close enough room that the run
-        tests the DIMMs rather than the page file.
-        """
-        if preset_name.startswith(("Smallest", "Small ")):
-            return 0
-        free = hardware.available_ram_mb()
-        if preset_name.startswith("Large"):
-            return max(1024, int(free * 0.25))
-        if preset_name.startswith(("Blend", "Huge")):
-            return max(1024, int(free * 0.5))
-        return 0
+    def quick_summary(self, root):
+        """The card has no preset to name, so it says what will happen."""
+        limit = int(self.quick_config(root).get("duration", 0) or 0)
+        return "Opens its torture dialog" + (
+            "  |  " + str(limit) + " min" if limit else "")
 
     def build(self, config, root):
         exe = self.locate(root)
@@ -126,44 +83,20 @@ class Prime95(Tool):
 
         work = settings.run_dir("prime95")
 
-        min_fft = int(config.get("min_fft", 4))
-        max_fft = int(config.get("max_fft", 32))
-        if max_fft < min_fft:
-            min_fft, max_fft = max_fft, min_fft
-
-        # Everything goes in prime.txt. The torture settings are documented as
-        # living in local.txt, and 30.19 does still read them from there -- but
-        # what it then does is migrate them into prime.txt and delete
-        # local.txt, so writing local.txt means writing a file that exists for
-        # about a second. Written here directly it is one file, no migration
-        # step, and the settings survive being read back.
-        #
-        # The first two keys are what stop the GIMPS welcome dialog appearing
-        # and waiting for a human: StressTester=1 is the "just stress testing"
-        # answer. The two Converted/version keys mark the file as already
-        # migrated, which suppresses the version-upgrade prompt.
-        lines = [
+        # Four keys, and no torture settings at all. StressTester=1 is the
+        # "just stress testing" answer that stops the GIMPS welcome dialog
+        # waiting for somebody, and it is also what makes Prime95 raise its
+        # torture dialog on startup -- which is the point here. The other two
+        # mark the file as already migrated, suppressing the version prompt.
+        self._write(os.path.join(work, "prime.txt"), "\n".join([
             "StressTester=1",
             "UsePrimenet=0",
             "V24OptionsConverted=1",
             "WGUID_version=2",
-            f"MinTortureFFT={min_fft}",
-            f"MaxTortureFFT={max_fft}",
-            f"TortureMem={int(config.get('memory', 0))}",
-            f"TortureTime={int(config.get('time_per_fft', 6))}",
-            f"TortureCores={int(config.get('cores', hardware.physical_cores()))}",
-            f"TortureHyperthreading={1 if config.get('hyperthreading') else 0}",
-            "TortureAlternateInPlace="
-            f"{1 if config.get('alternate_in_place', True) else 0}",
-        ]
-        extra = str(config.get("extra", "")).strip()
-        if extra:
-            lines.extend(part.strip() for part in extra.splitlines() if part.strip())
-        self._write(os.path.join(work, "prime.txt"), "\n".join(lines) + "\n")
+        ]) + "\n")
 
         # A local.txt left over from an earlier version of this program would
-        # be migrated on top of what was just written, silently reinstating
-        # the previous run's settings.
+        # be migrated on top of what was just written.
         try:
             stale = os.path.join(work, "local.txt")
             if os.path.exists(stale):
@@ -180,17 +113,14 @@ class Prime95(Tool):
         except OSError:
             pass
 
-        smt = " + SMT" if config.get("hyperthreading") else ""
+        # No -t: that would start a torture test from the file before there
+        # was a chance to choose one.
         return LaunchSpec(
-            argv=[exe, f"-W{work}", "-t"],
+            argv=[exe, "-W" + work],
             cwd=os.path.dirname(exe),
             console=False,
             watch_files=[results],
             error_key=self.key,
-            summary=(
-                f"Prime95 {min_fft}K-{max_fft}K, "
-                f"{config.get('memory', 0)} MB, "
-                f"{config.get('cores')} cores{smt}"
-            ),
+            summary="Prime95 (test chosen in its own dialog)",
             duration_seconds=int(config.get("duration", 0)) * 60,
         )

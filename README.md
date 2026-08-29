@@ -1,6 +1,6 @@
 # Roch StressTest
 
-**Roch StressTest** — one window for every stress test on the machine. Prime95, y-cruncher, TestMem5, RAM Test Pro, both Linpacks, Cinebench, memtest_vulkan and 3DMark 11, each with presets that say what they actually do, a time limit, and live failure detection. Python 3.13 / CustomTkinter, same theme as [Roch Viewer](https://github.com/RochStudio/Roch-Viewer) and [Roch GPU OC](https://github.com/RochStudio/Roch-GPU).
+**Roch StressTest** — one window for every stress test on the machine. Prime95, y-cruncher, TestMem5, RAM Test Pro, both Linpacks, OCCT, Cinebench, memtest_vulkan and 3DMark 11, each with presets that say what they actually do, a time limit, and live failure detection. Python 3.13 / CustomTkinter, same theme as [Roch Viewer](https://github.com/RochStudio/Roch-Viewer) and [Roch GPU OC](https://github.com/RochStudio/Roch-GPU).
 
 It does not implement a single test. Every tool runs exactly as it would if you started it yourself; what this adds is the part they leave to you.
 
@@ -36,21 +36,32 @@ Administrator rights are asked for once at launch. TestMem5 and RAM Test Pro nee
 
 | Tool | Presets | Driven by |
 |---|---|---|
-| **Prime95** | Smallest / Small / Large / Blend / Huge FFTs | `prime.txt` in a private work directory, then `prime95 -W<dir> -t` |
+| **Prime95** | none -- chosen in Prime95's own dialog | `prime95 -W<dir>`, with no `-t`, so it opens its torture dialog and waits |
 | **y-cruncher** | no presets — all eight algorithms as tick boxes | `y-cruncher … stress -M -D -TL <algorithms>` |
 | **TestMem5** | every `.cfg` in `bin/`, anta777 profiles first | `Config File="name.cfg"`, cycle count rewritten |
 | **RAM Test Pro** | every `.cfg` in `config/` | `config/current_config.txt`, plus its window filled in |
-| **Linpack Xtreme** | 2 / 4 / 6 / 8 / 14 / 30 GB | the raw Intel MKL binary with a generated input file |
-| **Linpack Extended** | the same, Intel CPUs only | the same, using that package's `linpack_xeon64.exe` |
-| **Cinebench** | R15, R15 Extreme, R20, R23, R24, R26 | `g_CinebenchCpuXTest=true`, plus `g_CinebenchMinimumTestDuration=<s>` only when looping (R20+); `-cb_cpux` (R15) |
+| **Linpack Xtreme** | none -- answered at its own menu | opens `LinpackXtreme_x64.exe` |
+| **Linpack Extended** | the same, Intel CPUs only | its own Node driver, in cmd: `config.json` written from the fields, then `node linpack.js` |
+| **OCCT** | none -- chosen in OCCT's own window | opens `OCCT.exe` |
+| **Cinebench** | none -- one button per version installed (R11.5 through R26) | opens that version's executable |
 | **memtest Vulkan** | first GPU / second GPU | the device index as a bare argument |
-| **3DMark 11** | Performance / Extreme / Entry | opens `bin\x64\3DMark11.exe`; `3DMark11Cmd.exe --loop=0` with Professional |
+| **3DMark 11** | none -- chosen in 3DMark's own window | opens `bin\x64\3DMark11.exe` |
 
 y-cruncher has no presets: its algorithms are not alternatives, so all eight are tick boxes and any combination runs. Ticking none runs the lot, which is y-cruncher's own convention. Cinebench chooses between one scored run and looping until the time limit — a single run simply leaves the minimum-duration argument off, and R15 can only ever do that.
 
-Not everything here checks its own answers, and the difference matters. Prime95, y-cruncher, Linpack, TestMem5, RAM Test Pro and memtest_vulkan all verify what they computed and can tell you the machine is *wrong*. Cinebench and 3DMark 11 are benchmarks: they load the hardware hard and report a score, but a pass means "it finished", not "the arithmetic was right". Use them for heat, sustained clocks and driver stability; use the others for correctness.
+Not everything here checks its own answers, and the difference matters. Prime95, y-cruncher, Linpack, TestMem5, RAM Test Pro, OCCT and memtest_vulkan all verify what they computed and can tell you the machine is *wrong*. Cinebench and 3DMark 11 do not: they are benchmarks. they load the hardware hard and report a score, but a pass means "it finished", not "the arithmetic was right". Use them for heat, sustained clocks and driver stability; use the others for correctness.
 
 Memory figures are computed from what is actually free when you pick a preset, not from a constant. Linpack's problem size and leading dimension are derived from the memory box using Intel's own rule — the nearest odd multiple of 16 at or above the problem size on AVX parts.
+
+### Linpack Extended runs its own driver
+
+Both packages are front-ends around the same Intel binary, and both are now used rather than gone around. Linpack Xtreme's is a console menu that asks for memory, trials and time and picks the right build for the processor itself, so it is opened and answered there. Linpack Extended's is a Node script, and it is the thing its settings are documented against. The fields on the tab are written to `config.json` in the package, in that project's own format, and `node linpack.js` is started in a cmd window. The `config.json` that shipped is copied to `config.json.roch-original` the first time rather than being written over and lost.
+
+Using it means its failure detection rather than ours: it parses every result row itself and prints `FAIL - severe instability detected`, or `RESIDUAL MISMATCH - instability detected` when a residual moves between identical trials. It also chains tests and tracks Min/Avg/Max GFlops per problem size, which the raw binary does not.
+
+Two consequences worth knowing. cmd has no `tee`, and the driver has no log option, so its output would be either on screen or readable and never both -- the package already ships `node.exe`, so a nine-line Node script splits it to the console and to a file the runner reads.
+
+And KMP_AFFINITY decides whether the Threads field means anything, which is why it defaults to blank here. `linpack.js` overrides the child's environment *only* when KMP_AFFINITY is set -- and when it does, it replaces the environment rather than adding to it, so `OMP_NUM_THREADS` and `MKL_NUM_THREADS` never arrive and the default `compact,1,0,granularity=fine` placement gives one thread per physical core: 8 of 16 on an 8C/16T part, half the load the tab asked for. Left blank, the binary inherits the environment and runs the threads it was told to. Blank is also this package's own documented answer to an OMP error at startup.
 
 ## Memory cleaner
 
@@ -66,19 +77,20 @@ What each tool runs from Quick Start, and what its own tab opens on:
 
 | Tool | Default |
 |---|---|
-| Prime95 | Large FFTs (2048K–8192K), 30 min |
+| Prime95 | opens its torture dialog, no time limit |
 | y-cruncher | VSTv3 ticked, 28 GB, 30 min |
 | TestMem5 | 1usmus v3 @ 1usmus, 25 cycles, no time limit |
 | RAM Test Pro | DDR4_DDR5_universal, 28 GB, threads auto, 1 cycle, stop on first error |
-| Linpack Xtreme | 4 GB, 30 min, residual checks on |
-| Linpack Extended | 4 GB, 30 min, residual checks on (Intel only) |
-| Cinebench | R23, all cores, one scored run |
-| memtest Vulkan | first GPU, 30 min |
-| 3DMark 11 | opens its window, 30 min |
+| Linpack Xtreme | opens its menu, no time limit |
+| Linpack Extended | 11 GB (problem size 38736), 30 min, residual checks on, alignment 1, KMP_AFFINITY blank (Intel only) |
+| OCCT | opens its window, no time limit |
+| Cinebench | one button per version installed, each opens it |
+| memtest Vulkan | first GPU, 15 min |
+| 3DMark 11 | opens its window, no time limit |
 
 TM5's cycle count lives inside the `.cfg`, so overriding it means writing a copy. That copy goes to `bin/Roch active.cfg`, with only the `Cycles=` line changed and every other byte identical. The stock profiles are never edited: a cycle count set here is a property of the run, not of the profile.
 
-Every default is reproduced as the command line you would have typed. y-cruncher's, for instance, is `pause:1 stress -M:28GB -TL:1800 VSTv3` — plus `skip-warnings`, without which it waits at a startup prompt nobody is there to answer, `colors:0` to keep escape codes out of the log, and `logfile:` for an artifact you can open afterwards.
+Every default is reproduced as the command line you would have typed. y-cruncher's, for instance, is `pause:1 stress -M:28GB -TL:1800 VSTv3` — plus `skip-warnings`, without which it waits at a startup prompt nobody is there to answer, and `logfile:` for an artifact you can open afterwards -- which is also what lets a run be watched while staying visible in its own console. `colors:0` is deliberately not passed: it was, on the assumption that colour would put escape codes in the log, and it does not. A log written with colour on contains no `0x1b` byte at all, so all that setting did was take the colour off the window you are watching.
 
 ## Failure detection
 
@@ -98,13 +110,21 @@ An exit is judged on what the tool said, not just on its exit code. Windows give
 
 A failure kills the process tree, beeps, switches to the Log tab, and writes a transcript to `%LOCALAPPDATA%\RochStressTest\logs\FAILED-<timestamp>.txt` — because the run that matters is the one that failed at 4am.
 
-## Four things found while building this
+## Five things found while building this
 
 All are handled in the code; they are written down because each cost an afternoon and none is documented anywhere obvious.
 
-**Prime95 torture settings do not live in `local.txt`.** Every reference, including Prime95's own `undoc.txt`, says they do. In 30.19 that is a migration path: give it a `local.txt` and it folds those keys into `prime.txt`, deletes `local.txt`, and carries on. `tool_prime95.py` writes `prime.txt` directly. Verifiable — ask for `MinTortureFFT=MaxTortureFFT=1024` and `results.txt` says `Self-test 1024K passed!` and nothing else.
+**Prime95 torture settings do not live in `local.txt`.** Every reference, including Prime95's own `undoc.txt`, says they do. In 30.19 that is a migration path: give it a `local.txt` and it folds those keys into `prime.txt`, deletes `local.txt`, and carries on. `tool_prime95.py` writes `prime.txt` directly -- these days only the four keys that suppress its startup prompts, but the same applies to anything put there. Verifiable — ask for `MinTortureFFT=MaxTortureFFT=1024` and `results.txt` says `Self-test 1024K passed!` and nothing else.
 
 **Linpack needs `MKL_DEBUG_CPU_TYPE=5` on Zen 5, and the two packages are not interchangeable.** Without it `linpack_amd64.exe` dies with an illegal instruction before printing a single result row — its kernel dispatch picks a path the CPU does not implement. The documented `MKL_ENABLE_INSTRUCTIONS=AVX2` does not fix it; only this does. The Intel-branded builds (`linpack_intel64.exe`, and Linpack Extended's `linpack_xeon64.exe`) refuse to run on AMD at all: they print "runs on only genuine Intel processors" and exit with status **zero**, so nothing is tested and nothing looks wrong. Linpack Xtreme ships an AMD build and is the one to use there; Linpack Extended is a separate tool that refuses to start on AMD rather than pretending to run.
+
+**Prime95's four torture presets are not fixed ranges, and its dialog cannot be preset from a file.** Two separate things, and together they decide how a launcher has to drive it.
+
+Every guide quotes Large FFTs as 2048K–8192K. In 30.19 it is worked out from the caches of the processor it finds: on a 14900KS with 36 MB of L3 and its E-cores off, Large FFTs starts at **957K**, and a launcher that writes 2048K skips the band from 957K to 2048K entirely. That band is not academic — 960K is exactly where that chip returned `FATAL ERROR: Rounding was 0.4990028871`. Hard-coding any range means running the right test on the machine it was read off and a different one everywhere else.
+
+The dialog cannot be steered any other way, because it does not read `prime.txt` at all. Seventeen variants were tried — every FFT range from 4 to 4096, with and without a memory figure, and a `prime.txt` Prime95 itself had written with Large FFTs selected. All seventeen opened on **Blend**, with Blend's own figures in the boxes. It also resets to Blend when reopened *mid-run*, while the Large FFTs test it was used to start is still going. So the radio button can never confirm what a launcher configured: read `MinTortureFFT`, or the `FFT length 960K` in the worker lines, and ignore the button entirely.
+
+Both of those are why Prime95 has no tab here. A tab of FFT sizes and memory figures could not be shown to agree with what Prime95 was going to do -- the numbers differ per machine, and the dialog contradicts them on sight. Quick Start opens Prime95 with that dialog up and lets it be answered in the one place that decides it. `results.txt` is still watched, so a worker that fails at 4am is still caught.
 
 **TestMem5 does write a log.** It is generally taken as read that TM5's error count exists only on its own window. In 0.13.1 it also appends to `Log.txt` beside `TM5.exe` — the configuration it loaded, the memory it took, every error, and how the run ended — so a TM5 failure at 3am is catchable after all. The patterns in `errors.TESTMEM5` are TM5's own message templates, read out of the strings in `TM5.exe` and `TM5.dll` rather than guessed, including the ones that must *not* count: TM5 separates a failure of the memory under test from a failure of TM5 itself (`Failed to allocate memory for testing`, `WARNING! Failed to lock memory`) and says outright, "This is not a failure of tested memory."
 

@@ -1,0 +1,1 @@
+y-cruncher.exe pause:1 stress -TL:1800 SFT

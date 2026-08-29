@@ -15,6 +15,7 @@ passes none at all rather than listing them: that is how y-cruncher is told
 to run the lot.
 """
 
+import glob
 import os
 
 import errors
@@ -134,6 +135,59 @@ class YCruncher(Tool):
             return "-M:" + str(megabytes // 1024) + "GB"
         return "-M:" + str(megabytes) + "M"
 
+    def bat_files(self, root):
+        """Every .bat sitting beside y-cruncher.exe, sorted by name.
+
+        Read from the folder rather than listed here, so a .bat dropped in
+        beside it gets a button without this file being touched -- the same
+        way TestMem5 and RAM Test Pro take their profiles from what is on
+        disk.
+        """
+        exe = self.locate(root)
+        if not exe:
+            return []
+        found = glob.glob(os.path.join(os.path.dirname(exe), "*.bat"))
+        return sorted(found, key=lambda p: os.path.basename(p).lower())
+
+    def quick_actions(self, root):
+        """Open the menu, or run one of the .bat files beside it."""
+        actions = [("Open", dict(self.quick_config(root), quick_mode="open"))]
+        for bat in self.bat_files(root):
+            label = os.path.splitext(os.path.basename(bat))[0].upper()
+            actions.append((label, dict(self.quick_config(root),
+                                        quick_mode="bat", bat_path=bat)))
+        return actions
+
+    def quick_summary(self, root):
+        names = [os.path.splitext(os.path.basename(b))[0].upper()
+                 for b in self.bat_files(root)]
+        if not names:
+            return super().quick_summary(root)
+        return "Open the menu, or run " + " / ".join(names)
+
+    @staticmethod
+    def _bat_arguments(path):
+        """The y-cruncher arguments out of a .bat, or [] if there are none.
+
+        These files are one line calling y-cruncher.exe, which is all this
+        needs to understand. Anything more elaborate is left alone rather
+        than half-read.
+        """
+        try:
+            with open(path, "r", errors="replace") as handle:
+                text = handle.read()
+        except OSError:
+            return []
+        for line in text.splitlines():
+            stripped = line.strip()
+            if "y-cruncher" in stripped.lower() and ".exe" in stripped.lower():
+                parts = stripped.split()
+                for index, part in enumerate(parts):
+                    if part.lower().endswith("y-cruncher.exe") \
+                            or part.lower().endswith('y-cruncher.exe"'):
+                        return parts[index + 1:]
+        return []
+
     def build(self, config, root):
         exe = self.locate(root)
         if not exe:
@@ -143,7 +197,86 @@ class YCruncher(Tool):
             )
 
         work = settings.run_dir("ycruncher")
+        mode = str(config.get("quick_mode", ""))
+
+        if mode == "open":
+            # No arguments at all: y-cruncher's own menu, which is what it
+            # does when it is double-clicked. Nothing is watched because
+            # nothing has been chosen yet -- this is the button for going and
+            # looking rather than for starting a run.
+            return LaunchSpec(
+                argv=[exe],
+                cwd=os.path.dirname(exe),
+                console=False,
+                error_key=self.key,
+                summary="y-cruncher (its own menu)",
+                duration_seconds=0,
+                leave_open=True,
+                creation_flags=self._new_console_flags(),
+            )
+
         logfile = os.path.join(work, "ycruncher.log")
+
+        if mode == "bat":
+            bat = str(config.get("bat_path", ""))
+            arguments = self._bat_arguments(bat)
+            if not arguments:
+                raise ToolUnavailable(
+                    os.path.basename(bat) + " has no y-cruncher command in "
+                    "it that this could read."
+                )
+
+            # The .bat decides the test. Three things are added to what it
+            # says, and nothing is taken away: logfile: is the only reason a
+            # run in a visible console can be watched at all, and
+            # skip-warnings stops it waiting at a startup prompt for an ENTER
+            # nobody is there to press. Startup parameters have to come
+            # before "stress", per the manual, so they are inserted rather
+            # than appended.
+            #
+            # colors:0 is deliberately NOT added. It was, on the assumption
+            # that colour would put escape codes in the log -- it does not.
+            # A run logged with colour left on contains no 0x1b byte at all:
+            # the colour is applied to the console, and the logfile is
+            # written plain either way. All it did was take the colour off
+            # the window somebody is watching.
+            added = ["skip-warnings", "logfile:" + logfile]
+            if "stress" in arguments:
+                cut = arguments.index("stress")
+                argv = [exe] + arguments[:cut] + added + arguments[cut:]
+            else:
+                argv = [exe] + added + arguments
+
+            # -TL: is y-cruncher's own limit. It checks it only between tests
+            # and routinely overruns, so the runner's clock allows five
+            # minutes past it before stepping in -- the same grace the normal
+            # path uses.
+            seconds = 0
+            for part in arguments:
+                if part.lower().startswith("-tl:"):
+                    try:
+                        seconds = int(part.split(":", 1)[1]) + 300
+                    except ValueError:
+                        seconds = 0
+
+            try:
+                if os.path.exists(logfile):
+                    os.remove(logfile)
+            except OSError:
+                pass
+
+            return LaunchSpec(
+                argv=argv,
+                cwd=os.path.dirname(exe),
+                console=False,
+                watch_files=[logfile],
+                error_key=self.key,
+                summary=("y-cruncher " + os.path.basename(bat) + ": "
+                         + " ".join(arguments)),
+                duration_seconds=seconds,
+                leave_open=True,
+                creation_flags=self._new_console_flags(),
+            )
 
         # Startup parameters come before the option, per the manual.
         #
@@ -158,7 +291,6 @@ class YCruncher(Tool):
             exe,
             "skip-warnings",
             "pause:1" if config.get("pause") else "pause:-2",
-            "colors:0",
             f"priority:{self._PRIORITY.get(config.get('priority'), 0)}",
             f"logfile:{logfile}",
             "stress",

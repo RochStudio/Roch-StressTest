@@ -1,35 +1,28 @@
-"""3DMark 11, looped, as a graphics load.
+"""3DMark 11, opened as a graphics load.
 
-The GUI launcher takes no useful arguments, but ``bin\\x64\\3DMark11Cmd.exe``
-does, and its embedded usage text is where these came from:
+Its window is where everything about a 3DMark run is decided: which
+benchmark, how many loops, which adapter. There is a command-line runner
+beside it, ``bin\x64\3DMark11Cmd.exe``, which can set all of that from
+outside -- but it needs the Professional edition, and Advanced (which the
+free legacy key gives) unlocks looping in the window instead. Offering those
+settings here would mean offering most installations a set of controls that
+answer "you do not have a licence for this", so this opens the window and
+lets it be driven there.
 
-    --definition=<benchmark.xml>   Name of benchmark definition XML file.
-    --loop[=<count>]               The number of times to loop benchmark.
-                                   Count 0 or omitting count means infinite.
-    --audio[=on|=off]              Play audio (default on).
-    --systeminfo[=on|=off]         Collect SystemInfo (default off).
-    --adapter=<index>              Index of used DXGI adapter.
-
-``--loop=0`` is what makes this usable here: without it 3DMark runs its
-scenes once, reports a score and exits, which is a benchmark rather than a
-load. Looped, it holds the GPU at a game-like duty cycle until the runner
-stops it, which is a different kind of stress from memtest_vulkan -- shaders
-and the whole board rather than the memory alone.
-
-The definition files sit beside the executable (performance, extreme, entry),
-so the presets are read from what is actually installed rather than assumed.
+Looping is the part that matters: run once, 3DMark renders its scenes,
+reports a score and exits, which is a benchmark rather than a load. Looped,
+it holds the GPU at a game-like duty cycle until it is stopped -- a different
+kind of stress from memtest_vulkan, shaders and the whole board rather than
+the memory alone.
 
 Worth being clear about: a looping benchmark reports nothing when the machine
 is merely wrong. It catches a driver reset, a hang, or a crash -- which is
 how an unstable GPU usually fails -- but it does not verify a single pixel.
 memtest_vulkan is the one that checks its answers.
 """
-
-import glob
 import os
 
-import errors
-from toolbase import Field, LaunchSpec, Preset, Tool, ToolUnavailable
+from toolbase import Field, LaunchSpec, Tool, ToolUnavailable
 
 SEARCH_ROOTS = (
     r"C:\Program Files\Futuremark\3DMark 11",
@@ -78,75 +71,37 @@ class ThreeDMark11(Tool):
     )
 
     fields = (
-        Field("command_line", "Use the command-line runner", "bool", False,
-              hint="3DMark11Cmd.exe, which loops unattended -- but it needs "
-                   "the Professional edition. Advanced, which the free "
-                   "legacy key gives, unlocks looping in the window instead, "
-                   "not on the command line."),
-        Field("definition", "Preset", "choice", "", choices=[],
-              hint="The benchmark definition to loop. Command-line runner "
-                   "only."),
-        Field("loops", "Loops", "int", 0, minimum=0, maximum=10000,
-              hint="0 loops forever, which is what a soak wants. Any other "
-                   "number stops after that many runs."),
-        Field("adapter", "GPU index", "int", 0, minimum=0, maximum=16,
-              hint="DXGI adapter index. 0 is the primary card."),
-        Field("audio", "Play audio", "bool", False,
-              hint="3DMark plays sound by default, which is not welcome from "
-                   "something left running for an hour."),
-        Field("duration", "Stop after", "int", 30, minimum=0, maximum=100000,
+        Field("duration", "Stop after", "int", 0, minimum=0, maximum=100000,
               unit="min",
-              hint="Enforced here, since a looping benchmark never ends on "
-                   "its own. 0 runs until you press Stop."),
+              hint="0 lets the loop you set in 3DMark's own window run until "
+                   "you press Stop."),
     )
 
+    # Configured in 3DMark's own window, so there is no tab here. Its
+    # presets, loop count and adapter all live in that window, and the
+    # command-line runner that could set them from outside needs the
+    # Professional edition -- so a tab here would be a tab of settings most
+    # installations cannot use.
+    has_tab = False
+
+    presets = ()
+
     quick_start = {
-        "preset": "Performance",
-        "values": {"loops": 0, "duration": 30, "audio": False,
-                   "command_line": False},
-        "note": "Opens 3DMark 11; set the loop in its window. 30 minutes.",
+        "values": {"duration": 0},
+        "note": "Opens 3DMark 11, so the preset and the loop are the ones you "
+                "set in its window. Stop ends it.",
     }
 
-    _LABELS = {
-        "performance_definition.xml": "Performance",
-        "extreme_definition.xml": "Extreme",
-        "entry_definition.xml": "Entry",
-    }
+    def quick_actions(self, root):
+        """One button, and it opens the tool rather than starting a run."""
+        return [("Open", self.quick_config(root))]
 
-    def definitions(self, root):
-        """The definition files present, as (label, filename) pairs."""
-        exe = self.locate(root)
-        if not exe:
-            return []
-        folder = os.path.dirname(exe)
-        found = []
-        for path in sorted(glob.glob(os.path.join(folder, "*_definition.xml"))):
-            name = os.path.basename(path)
-            found.append((self._LABELS.get(name, name), name))
-        # Performance first: it is the preset almost everyone means.
-        found.sort(key=lambda pair: (pair[0] != "Performance", pair[0]))
-        return found
-
-    def note_for(self, label):
-        for name, description in DEFINITIONS.items():
-            if self._LABELS.get(name, name) == label:
-                return description
-        return ""
-
-    def presets_for(self, root):
-        made = [
-            Preset(label, {"definition": name}, self.note_for(label))
-            for label, name in self.definitions(root)
-        ]
-        return tuple(made) or (Preset("None found", {}, ""),)
-
-    def command_tool(self, root):
-        """3DMark11Cmd.exe, if it is there. Professional edition only."""
-        launcher = self.locate(root)
-        if not launcher:
-            return None
-        path = os.path.join(os.path.dirname(launcher), "3DMark11Cmd.exe")
-        return path if os.path.isfile(path) else None
+    def quick_summary(self, root):
+        """The card has no preset to name, so it says what will happen."""
+        limit = int(self.quick_config(root).get("duration", 0) or 0)
+        # Nothing worth a line of its own when there is no limit: the
+        # button says "Open" and the note underneath says the rest.
+        return str(limit) + " min" if limit else ""
 
     def build(self, config, root):
         exe = self.locate(root)
@@ -156,63 +111,19 @@ class ThreeDMark11(Tool):
                 "under Program Files\\Futuremark\\3DMark 11."
             )
 
-        if not config.get("command_line"):
-            # The window. Every edition can open it, and Advanced -- which
-            # the free legacy key gives -- can set a loop count in it. The
-            # runner still holds it to a time limit and still notices it
-            # dying, which is most of what supervision is for here.
-            return LaunchSpec(
-                argv=[exe],
-                cwd=os.path.dirname(exe),
-                console=False,
-                error_key=self.key,
-                summary="3DMark 11 (set the loop in its own window)",
-                duration_seconds=int(config.get("duration", 0)) * 60,
-                leave_open=True,
-            )
-
-        cmd = self.command_tool(root)
-        if not cmd:
-            raise ToolUnavailable(
-                "3DMark11Cmd.exe was not found beside 3DMark 11, so there is "
-                "no command-line runner to use."
-            )
-        exe = cmd
-
-        available = dict((name, label)
-                         for label, name in self.definitions(root))
-        wanted = str(config.get("definition", "")).strip()
-        if wanted not in available and available:
-            wanted = next(iter(available))
-        if not wanted:
-            raise ToolUnavailable(
-                "3DMark 11 has no benchmark definition files beside its "
-                "executable, so there is nothing to run."
-            )
-
-        loops = int(config.get("loops", 0))
-        argv = [
-            exe,
-            "--definition=" + wanted,
-            "--loop=" + str(loops),
-            "--audio=" + ("on" if config.get("audio") else "off"),
-            "--systeminfo=off",
-            "--adapter=" + str(int(config.get("adapter", 0))),
-        ]
-
+        # The window, and only the window. Every edition can open it, and
+        # Advanced -- which the free legacy key gives -- can set a loop count
+        # in it. The command-line runner could drive it from outside, but it
+        # needs the Professional edition, so most installations would be
+        # offered a control that answers "you do not have a licence for
+        # this". The runner still holds this to a time limit and still
+        # notices it dying, which is most of what supervision is for here.
         return LaunchSpec(
-            argv=argv,
+            argv=[exe],
             cwd=os.path.dirname(exe),
-            console=True,
+            console=False,
             error_key=self.key,
-            summary=(
-                "3DMark 11 " + available.get(wanted, wanted) + ", "
-                + ("looping" if loops == 0 else str(loops) + " runs")
-            ),
+            summary="3DMark 11 (preset and loop set in its own window)",
             duration_seconds=int(config.get("duration", 0)) * 60,
-            creation_flags=self._no_window_flags(),
-            # Looping is a Professional-edition feature. A Basic install
-            # says so and stops, which is a licence problem rather than
-            # anything the graphics card did.
-            setup_patterns=errors.THREEDMARK_SETUP,
+            leave_open=True,
         )

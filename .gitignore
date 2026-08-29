@@ -32,3 +32,20 @@ p95*/worktodo.txt
 # Linpack input files and any transcript captured while testing.
 lininput*
 *_dump.txt
+
+# Cinebench and OCCT are kept beside this program so the folder is
+# self-contained, but they are gigabytes of somebody else's binaries and
+# several single files are past GitHub's 100 MB limit -- CINEBENCH 2024's
+# Redshift1.dat is 559 MB on its own. Committing them would make the
+# repository unpushable and, because history keeps them, permanently so.
+# They are found automatically wherever they sit, so being outside the
+# repository costs nothing.
+CINEBENCH*/
+OCCT/
+
+# What the two Linpacks leave behind when they are actually run. The same
+# reasoning as the Prime95 entries above: state from a run, not the package.
+Linpack-Extended-master/dependencies/temp
+Linpack-Extended-master/config.json.roch-original
+LinpackXtreme*/linpack.ini
+LinpackXtreme*/results.txt

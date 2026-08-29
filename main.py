@@ -242,6 +242,11 @@ class ToolPanel:
 
         if self.preset_note is not None:
             self.preset_note.configure(text=preset.description)
+        # Before the early return below: a preset with no values of its own
+        # still decides which boxes it leaves you free to fill in.
+        locked = set(self.tool.locked_fields(name))
+        for key, row in self.rows.items():
+            row.set_enabled(key not in locked)
         if not preset.values and not initial:
             return
 
@@ -255,7 +260,7 @@ class ToolPanel:
             # Memory is derived from the preset rather than stored in it, so
             # that the figure suits the machine it is running on today.
             if hasattr(self.tool, "suggested_memory") and "memory" in self.rows:
-                if preset.values:
+                if preset.values and "memory" not in locked:
                     self.rows["memory"].set(self.tool.suggested_memory(name))
             if hasattr(self.tool, "apply_memory") and preset.values:
                 self._recompute_linpack()
@@ -345,12 +350,13 @@ class StressApp:
     def setup_window_geometry(self):
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
-        width = min(1020, max(880, screen_width - 80))
-        height = min(880, max(640, screen_height - 120))
+        # 850x775, and only smaller than that when the screen cannot hold it.
+        width = min(850, max(700, screen_width - 80))
+        height = min(775, max(560, screen_height - 120))
         x = max(0, (screen_width - width) // 2)
         y = max(0, (screen_height - height) // 2)
         self.root.geometry("{}x{}+{}+{}".format(width, height, x, y))
-        self.root.minsize(880, 620)
+        self.root.minsize(700, 560)
 
     def create_widgets(self):
         self.main_frame = ctk.CTkFrame(
@@ -366,11 +372,6 @@ class StressApp:
         bar = ctk.CTkFrame(self.main_frame, corner_radius=0,
                            fg_color=theme.HEADER_COLOR, height=32)
         bar.pack(fill="x", padx=2, pady=(2, 2))
-
-        ctk.CTkLabel(
-            bar, text=APP_NAME, font=theme.TITLE_FONT,
-            text_color=theme.TEXT_COLOR, anchor="w",
-        ).pack(side="left", padx=(10, 6), pady=3)
 
         ctk.CTkLabel(
             bar, text=hardware.describe_cpu(), font=theme.COMPACT_FONT,
@@ -442,6 +443,9 @@ class StressApp:
         self._build_quick_tab(self.tabview.add("Quick Start"))
 
         for tool in toolset.TOOLS:
+            # A tool configured in its own window has nothing to put on a tab.
+            if not getattr(tool, "has_tab", True):
+                continue
             tab = self.tabview.add(tool.name)
             if tool.available(self.root_path):
                 self.panels[tool.key] = ToolPanel(self, tab, tool)
@@ -458,19 +462,22 @@ class StressApp:
         tool's default configuration -- the same one its own tab opens on --
         so nothing here needs reading before it can be used.
         """
+        # Scrollable, but the bar is hidden while everything fits -- which is
+        # the normal case, and a scrollbar sitting there doing nothing is the
+        # thing this page can least afford. It reappears the moment the
+        # content outgrows the window.
         frame = ctk.CTkScrollableFrame(parent, corner_radius=0,
                                        fg_color=theme.BG_COLOR)
         frame.pack(fill="both", expand=True)
+        self._auto_hide_scrollbar(frame)
 
         ctk.CTkLabel(
             frame,
-            text=("Each button runs that tool's default configuration, one "
-                  "test at a time. The tool's own tab opens on the same "
-                  "settings, so change them there if you want something "
-                  "else."),
+            text=("One test at a time. Close a tool's own window to end a run "
+                  "it is driving."),
             font=theme.COMPACT_FONT, text_color=theme.SUBTITLE_COLOR,
             anchor="w", justify="left", wraplength=900,
-        ).pack(fill="x", padx=12, pady=(10, 8))
+        ).pack(fill="x", padx=8, pady=(4, 3))
 
         # Two columns of cards rather than one tall list, so all five tools
         # are on screen at once and Quick Start needs no scrolling to use.
@@ -487,45 +494,101 @@ class StressApp:
             side.grid(row=0, column=index, sticky="new")
             sides.append(side)
 
-        # Down the left column first, then the right, so reading order
-        # matches the tab order rather than zig-zagging across the page.
-        tools = list(toolset.TOOLS)
-        split = (len(tools) + 1) // 2
-        for position, tool in enumerate(tools):
-            self._build_quick_card(sides[0 if position < split else 1], tool)
+        # The columns are laid out in toolset rather than split down the
+        # middle of the tab order, so related tools sit together.
+        for side, tools in zip(sides, toolset.quick_columns()):
+            for tool in tools:
+                self._build_quick_card(side, tool)
+
+    @staticmethod
+    def _auto_hide_scrollbar(frame):
+        """Hide a scrollable frame's bar while its content fits.
+
+        CustomTkinter always shows it. Reaching for the canvas and the bar
+        behind the widget is the only way to ask whether scrolling is needed,
+        so both are fetched defensively: if a later version renames either,
+        the page keeps its scrollbar rather than failing to draw.
+        """
+        canvas = getattr(frame, "_parent_canvas", None)
+        bar = getattr(frame, "_scrollbar", None)
+        if canvas is None or bar is None:
+            return
+
+        def sync(_event=None):
+            try:
+                first, last = canvas.yview()
+            except Exception:
+                return
+            if first <= 0.0 and last >= 1.0:
+                bar.grid_remove()
+            else:
+                bar.grid()
+
+        for widget in (frame, canvas):
+            widget.bind("<Configure>", sync, add="+")
+        frame.after(150, sync)
 
     def _build_quick_card(self, parent, tool):
         available = tool.available(self.root_path)
         body = widgets.section(parent, tool.name)
 
         blocked = tool.unsupported_reason(self.root_path) if available else ""
-        if not available:
+        if not available and not getattr(tool, "has_tab", True):
+            # No tab to send anybody to, so the card has to say where it
+            # should go instead.
+            headline = "Not found -- unpack it into the program folder."
+        elif not available:
             headline = "Not found -- see the " + tool.name + " tab."
         elif blocked:
             headline = "Not for this processor"
         else:
             headline = tool.quick_summary(self.root_path)
 
-        ctk.CTkLabel(
-            body, text=headline, font=theme.COMPACT_BOLD,
-            text_color=(theme.TEXT_COLOR if available and not blocked
-                        else theme.WARN_COLOR if blocked else theme.FAIL_COLOR),
-            anchor="w", justify="left", wraplength=400,
-        ).grid(row=0, column=0, columnspan=2, sticky="w")
+        if headline:
+            ctk.CTkLabel(
+                body, text=headline, font=theme.COMPACT_BOLD,
+                text_color=(theme.TEXT_COLOR if available and not blocked
+                            else theme.WARN_COLOR if blocked
+                            else theme.FAIL_COLOR),
+                anchor="w", justify="left", wraplength=400,
+            ).grid(row=0, column=0, columnspan=2, sticky="w")
 
-        note = blocked or (tool.quick_note() if available else "")
+        note = blocked or (tool.quick_note() if available
+                           else self.root_path if not getattr(
+                               tool, "has_tab", True) else "")
         if note:
             widgets.hint(body, note, 1, column=0, span=2, wrap=380)
 
         buttons = ctk.CTkFrame(body, fg_color="transparent")
-        buttons.grid(row=2, column=0, sticky="w", pady=(4, 0))
-        start = widgets.action_button(
-            buttons, "Start", lambda t=tool: self.start_quick(t),
-            kind="start", width=110,
-        )
-        start.pack(side="left")
-        if not available or blocked:
-            start.configure(state="disabled")
+        buttons.grid(row=2, column=0, sticky="w", pady=(3, 0))
+
+        actions = ([("Start", None)] if not available or blocked
+                   else tool.quick_actions(self.root_path))
+
+        # Four to a row. Cinebench has a button per version installed, which
+        # is six on a machine with the lot, and in one row they ran off the
+        # edge of the card with the last one unreachable.
+        rows, per_row = [], 4
+        for index in range(0, len(actions), per_row):
+            row = ctk.CTkFrame(buttons, fg_color="transparent")
+            row.pack(anchor="w", pady=(0, 3 if index + per_row < len(actions)
+                                       else 0))
+            rows.append(row)
+
+        for position, (label, config) in enumerate(actions):
+            holder = rows[position // per_row]
+            if config is None:
+                command = lambda t=tool: self.start_quick(t)
+            else:
+                command = (lambda t=tool, c=config, n=label:
+                           self.start_single(t, c, t.name + " -- " + n))
+            button = widgets.action_button(
+                holder, label, command, kind="start",
+                width=110 if len(actions) == 1 else 96,
+            )
+            button.pack(side="left", padx=(0, 4))
+            if not available or blocked:
+                button.configure(state="disabled")
 
     def _build_missing_panel(self, parent, tool):
         frame = ctk.CTkFrame(parent, fg_color=theme.BG_COLOR)
@@ -579,11 +642,6 @@ class StressApp:
         )
         self.detail_label.pack(side="left", padx=(0, 8), pady=4)
 
-        self.stop_button = widgets.action_button(
-            strip, "Stop", self.stop_all, kind="stop", width=90
-        )
-        self.stop_button.pack(side="right", padx=(4, 10), pady=4)
-        self.stop_button.configure(state="disabled")
 
         self.clock_label = ctk.CTkLabel(
             strip, text="", font=theme.STATUS_FONT,
@@ -708,7 +766,6 @@ class StressApp:
             self.log("Could not start the process: " + str(error))
             self._set_state(runner_module.BROKEN, str(error))
             return
-        self.stop_button.configure(state="normal")
 
     def quick_label(self, tool):
         name = tool.quick_preset_name(self.root_path)
@@ -769,7 +826,6 @@ class StressApp:
         self._set_state(state, note)
         if state == runner_module.RUNNING:
             self.stat_text = ""
-            self.stop_button.configure(state="normal")
             return
 
         self.log(STATE_TEXT.get(state, state).upper() + ": " + note)
@@ -779,7 +835,6 @@ class StressApp:
         if state == runner_module.FAILED:
             self._announce_failure(note)
 
-        self.stop_button.configure(state="disabled")
         self.clock_label.configure(text="")
 
     def _announce_failure(self, note):

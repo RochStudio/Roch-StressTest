@@ -26,6 +26,13 @@ from ctypes import wintypes
 
 _USER32 = ctypes.WinDLL("user32", use_last_error=True)
 
+MF_BYPOSITION = 0x0400
+WM_COMMAND = 0x0111
+BM_GETCHECK = 0x00F0
+GWL_STYLE = -16
+BS_TYPEMASK = 0x0000000F
+BS_RADIOBUTTON = 0x00000004
+BS_AUTORADIOBUTTON = 0x00000009
 WM_SETTEXT = 0x000C
 WM_GETTEXT = 0x000D
 WM_GETTEXTLENGTH = 0x000E
@@ -53,6 +60,20 @@ _USER32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
 _USER32.IsWindowVisible.argtypes = [wintypes.HWND]
 _USER32.EnumWindows.argtypes = [_ENUM_PROC, wintypes.LPARAM]
 _USER32.EnumChildWindows.argtypes = [wintypes.HWND, _ENUM_PROC, wintypes.LPARAM]
+_USER32.GetMenu.argtypes = [wintypes.HWND]
+_USER32.GetMenu.restype = wintypes.HMENU
+_USER32.GetSubMenu.argtypes = [wintypes.HMENU, ctypes.c_int]
+_USER32.GetSubMenu.restype = wintypes.HMENU
+_USER32.GetMenuItemCount.argtypes = [wintypes.HMENU]
+_USER32.GetMenuItemID.argtypes = [wintypes.HMENU, ctypes.c_int]
+_USER32.GetMenuStringW.argtypes = [
+    wintypes.HMENU, wintypes.UINT, wintypes.LPWSTR, ctypes.c_int, wintypes.UINT
+]
+_USER32.PostMessageW.argtypes = [
+    wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM
+]
+_USER32.GetWindowLongW.argtypes = [wintypes.HWND, ctypes.c_int]
+_USER32.GetWindowLongW.restype = wintypes.LONG
 
 
 class Control:
@@ -79,7 +100,14 @@ class Control:
         return self.class_name == "Button" or ".Button." in self.class_name
 
     def __repr__(self):
-        return "Control(%r, %r)" % (self.class_name.split(".")[1], self.text)
+        # WinForms names a control "WindowsForms10.Button.app.0...", and the
+        # interesting part is the second piece. A plain Win32 dialog just
+        # says "Button", with no pieces at all -- so taking [1] blindly threw
+        # IndexError on every control of every standard dialog, which is most
+        # of them once a tool other than RAM Test Pro is driven.
+        pieces = self.class_name.split(".")
+        kind = pieces[1] if len(pieces) > 1 else self.class_name
+        return "Control(%r, %r)" % (kind, self.text)
 
 
 # Every read of another program's window text goes through a timeout. A plain
@@ -216,8 +244,16 @@ def box_beside(found, label, tolerance=14):
     Max Errors" survives a layout change and "the third box down" does not.
     The box must also start to the right of the label, which is what stops a
     left-hand column matching a right-hand one on the same line.
+
+    Ampersands are ignored on both sides. A plain Win32 dialog carries the
+    keyboard accelerator in the caption -- Prime95's is really "Number of
+    cores to &torture test:" -- and matching on the label as drawn is the
+    only way to write it down the way it appears on screen.
     """
-    labels = [c for c in found if c.text.strip() == label]
+    def plain(text):
+        return text.replace("&", "").strip()
+
+    labels = [c for c in found if plain(c.text) == plain(label)]
     if not labels:
         return None
     anchor = labels[0]
@@ -235,6 +271,63 @@ def box_beside(found, label, tolerance=14):
 def button(found, label):
     for control in found:
         if control.is_button() and control.text.strip() == label:
+            return control
+    return None
+
+
+def menu_command(hwnd, wanted):
+    """Post the menu command whose caption contains *wanted*. True when sent.
+
+    Prime95's torture dialog is the one thing about that program which cannot
+    be set from a file. It does not read prime.txt when it opens -- it comes
+    up on Blend with figures of its own no matter what the file holds -- so
+    the only way to put it into a known state is to open it from the menu and
+    press the button, which is what this exists for.
+    """
+    menu = _USER32.GetMenu(hwnd)
+    if not menu:
+        return False
+    for index in range(_USER32.GetMenuItemCount(menu)):
+        sub = _USER32.GetSubMenu(menu, index)
+        if not sub:
+            continue
+        for item in range(_USER32.GetMenuItemCount(sub)):
+            caption = ctypes.create_unicode_buffer(256)
+            _USER32.GetMenuStringW(sub, item, caption, 256, MF_BYPOSITION)
+            if wanted.lower() in caption.value.lower():
+                _USER32.PostMessageW(
+                    hwnd, WM_COMMAND, _USER32.GetMenuItemID(sub, item), 0)
+                return True
+    return False
+
+
+def is_radio(control):
+    style = _USER32.GetWindowLongW(control.hwnd, GWL_STYLE)
+    return (style & BS_TYPEMASK) in (BS_RADIOBUTTON, BS_AUTORADIOBUTTON)
+
+
+def checked(control):
+    """True when a radio button or check box is ticked."""
+    return _send(control.hwnd, BM_GETCHECK, 0, 0) == 1
+
+
+def radio(found, label):
+    """The radio button whose caption starts with *label*.
+
+    Captions carry the ampersand of their keyboard accelerator, so the button
+    drawn as "Large FFTs (stresses memory controller and RAM)" is really
+    "&Large FFTs (...)". Stripping it is what makes the visible name findable.
+    """
+    for control in found:
+        if control.is_button() and is_radio(control)                 and control.text.replace("&", "").startswith(label):
+            return control
+    return None
+
+
+def labelled(found, wanted):
+    """The first button whose caption contains *wanted*, ampersand ignored."""
+    for control in found:
+        if control.is_button()                 and wanted.lower() in control.text.replace("&", "").lower():
             return control
     return None
 

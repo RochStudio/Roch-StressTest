@@ -16,12 +16,17 @@ of runs into "until we stop it", are taken from the Node driver in
 Linpack-Extended-master/dependencies/linpack.js.
 """
 
+import json
 import math
 import os
+import shutil
 
 import hardware
 import settings
 from toolbase import Field, LaunchSpec, Preset, Tool, ToolUnavailable
+
+
+TEE_JS = '// Written by Roch StressTest. cmd has no tee, and Linpack Extended has\n// no log option, so its output is split here: on to the console it is\n// running in, and into a file the runner can read. node is used because\n// the package already ships it -- adding a binary for this would be\n// worse, and PowerShell is what the console was moved away from.\nconst fs = require("fs");\nconst out = fs.createWriteStream(process.argv[2]);\nprocess.stdin.on("data", function (chunk) {\n  process.stdout.write(chunk);\n  out.write(chunk);\n});\nprocess.stdin.on("end", function () { out.end(); });\n'
 
 
 def leading_dimension(problem_size, avx=True):
@@ -125,6 +130,13 @@ class _Linpack(Tool):
         Preset("4 GB", {"memory": 4096}, "The usual starting point."),
         Preset("6 GB", {"memory": 6144}, ""),
         Preset("8 GB", {"memory": 8192}, ""),
+        # 11448 MB is not a round number for its own sake: it is the memory
+        # figure whose problem size comes out at exactly 38736, with a leading
+        # dimension of 38736 to match, which is the size Linpack Extended is
+        # usually run at.
+        Preset("11 GB", {"memory": 11448},
+               "Problem size 38736. A long trial, and the size Linpack "
+               "Extended is normally run at."),
         Preset("14 GB", {"memory": 14336},
                "Long trials. Leans on the DIMMs as hard as on the cores."),
         Preset("30 GB", {"memory": 30720},
@@ -160,114 +172,15 @@ class _Linpack(Tool):
         config["leading_dimension"] = leading_dimension(size)
         return config
 
-    def pick_binary(self, folder, found):
-        """Which of the binaries in *folder* to run. Overridden by Xtreme."""
-        return found
-
-    def build(self, config, root):
-        exe = self.locate(root)
-        if not exe:
-            raise ToolUnavailable(
-                self.name + "'s binary was not found. Expected its folder "
-                "beside this program."
-            )
-
-        blocked = self.unsupported_reason(root)
-        if blocked:
-            raise ToolUnavailable(blocked)
-
-        folder = os.path.dirname(exe)
-        exe = self.pick_binary(folder, exe)
-
-        size = int(config.get("problem_size", 22528))
-        lda = int(config.get("leading_dimension", 0)) or leading_dimension(size)
-        if lda < size:
-            lda = leading_dimension(size)
-        alignment = int(config.get("alignment", 4))
-
-        # Two banner lines, then: number of tests, size, leading dimension,
-        # trials, alignment. 99999 trials is Linpack Extended's way of saying
-        # "keep going"; the runner is what actually ends the test.
-        work = settings.run_dir("linpack")
-        input_path = os.path.join(work, "lininput")
-        self._write(
-            input_path,
-            "Roch StressTest Linpack input\n"
-            "Intel(R) Optimized LINPACK Benchmark data\n"
-            "1\n"
-            + str(size) + "\n"
-            + str(lda) + "\n"
-            "99999\n"
-            + str(alignment) + "\n",
-        )
-
-        # Copied, never replaced: linpack.js hands the child a bare dict,
-        # which drops PATH and stops the binary finding its OpenMP runtime.
-        env = dict(os.environ)
-        threads = int(config.get("threads", hardware.logical_cores()))
-        env["OMP_NUM_THREADS"] = str(threads)
-        env["MKL_NUM_THREADS"] = str(threads)
-
-        if hardware.is_amd():
-            # Without this the 2018 MKL build dies with an illegal
-            # instruction on Zen 5 before printing a single result row --
-            # its kernel dispatch picks a path the part does not implement.
-            # Forcing the AVX2 code path fixes it, and is the same trick the
-            # Linpack Xtreme front-end had to adopt to run on these CPUs.
-            # MKL_ENABLE_INSTRUCTIONS=AVX2 is the documented spelling and
-            # does *not* work here; only this one does.
-            env["MKL_DEBUG_CPU_TYPE"] = "5"
-        affinity = str(config.get("affinity", "")).strip()
-        if affinity:
-            env["KMP_AFFINITY"] = affinity
-        else:
-            env.pop("KMP_AFFINITY", None)
-
-        # Linpack has no log option, so showing its console means teeing its
-        # output: a redirected child leaves its own window blank, and the
-        # pass/fail column exists nowhere but that output. PowerShell is the
-        # only tee Windows ships. It writes UTF-16, which the runner's tail
-        # reader detects from the byte-order mark.
-        #
-        # Paths are single-quoted for PowerShell, which is what carries the
-        # spaces in "Roch StressTest" through intact.
-        show = bool(config.get("show_window", True))
-        tee_path = os.path.join(work, "linpack-output.txt")
-        cmdline = None
-        if show:
-            try:
-                if os.path.exists(tee_path):
-                    os.remove(tee_path)
-            except OSError:
-                pass
-            cmdline = (
-                "powershell -NoProfile -ExecutionPolicy Bypass -Command "
-                "\"& '" + exe + "' '" + input_path + "' | "
-                "Tee-Object -FilePath '" + tee_path + "'\""
-            )
-
-        memory_gb = 8.0 * lda * size / (1024 ** 3)
-        return LaunchSpec(
-            argv=[exe, input_path],
-            cmdline=cmdline,
-            cwd=folder,
-            env=env,
-            console=not show,
-            watch_files=[tee_path] if show else [],
-            error_key=self.key,
-            summary=(
-                "Linpack " + os.path.basename(exe)
-                + " n=" + str(size) + " lda=" + str(lda)
-                + ", {:.1f} GB, ".format(memory_gb) + str(threads) + " threads"
-            ),
-            duration_seconds=int(config.get("duration", 0)) * 60,
-            creation_flags=(self._new_console_flags() if show
-                            else self._no_window_flags()),
-        )
-
-
 class LinpackXtreme(_Linpack):
-    """Linpack Xtreme's binaries: the 2018.3 MKL build, in both vendor forms."""
+    """Linpack Xtreme, opened at its own menu.
+
+    The package is a console front-end around the Intel binary: it asks how
+    much memory, how many trials and how long, then runs it and prints the
+    table. Those questions are the whole configuration, and they are asked in
+    a way that is far clearer than a tab of the same fields would be -- so it
+    is opened and answered there rather than driven from here.
+    """
 
     key = "linpack_xtreme"
     name = "Linpack Xtreme"
@@ -277,26 +190,62 @@ class LinpackXtreme(_Linpack):
         "the package to use on AMD -- it ships a build that runs there. "
         "Watch temperatures: nothing else here pulls this much current."
     )
-    exe_globs = ("LinpackXtreme*/binaries/x64/linpack_*64.exe",)
+    # The menu, not the benchmark binary underneath it. It picks the right
+    # build for the processor itself, which is the other thing this used to
+    # do by hand.
+    exe_globs = ("LinpackXtreme*/LinpackXtreme_x64.exe",
+                 "LinpackXtreme*/LinpackXtreme_x32.exe")
+
+    # Answered in its own window, so there is no tab here.
+    has_tab = False
+
+    presets = ()
+
+    fields = (
+        Field("duration", "Stop after", "int", 0, minimum=0, maximum=100000,
+              unit="min",
+              hint="0 lets the trials you asked it for finish in their own "
+                   "time."),
+    )
 
     quick_start = {
-        "preset": "4 GB",
-        "values": {"duration": 30, "residual_check": True},
-        "note": "4 GB problem, 30 minutes, residual checks on. Start here "
-                "before the larger sizes.",
+        "values": {"duration": 0},
+        "note": "Opens Linpack Xtreme at its menu, where it asks for memory, "
+                "trials and time. Stop ends it.",
     }
 
-    def pick_binary(self, folder, found):
-        """The build that matches this processor.
+    def quick_actions(self, root):
+        """One button, and it opens the tool rather than starting a run."""
+        return [("Open", self.quick_config(root))]
 
-        Xtreme ships both. The AMD one forces the AVX2 paths that the Intel
-        one gates behind a vendor check, so running the Intel build on a
-        Ryzen produces a number that means very little -- when it runs at all.
-        """
-        preferred = ("linpack_amd64.exe" if hardware.is_amd()
-                     else "linpack_intel64.exe")
-        candidate = os.path.join(folder, preferred)
-        return candidate if os.path.isfile(candidate) else found
+    def quick_summary(self, root):
+        limit = int(self.quick_config(root).get("duration", 0) or 0)
+        # Nothing worth a line of its own when there is no limit: the
+        # button says "Open" and the note underneath says the rest.
+        return str(limit) + " min" if limit else ""
+
+    def build(self, config, root):
+        exe = self.locate(root)
+        if not exe:
+            raise ToolUnavailable(
+                "LinpackXtreme_x64.exe was not found. Expected its folder "
+                "beside this program."
+            )
+
+        # Its own console, and nothing read from it. The front-end prints the
+        # table to the screen and keeps no log, so there is no file to tail --
+        # what the runner still does is hold it to a limit if one was set and
+        # notice if it dies.
+        return LaunchSpec(
+            argv=[exe],
+            cwd=os.path.dirname(exe),
+            console=False,
+            error_key=self.key,
+            summary="Linpack Xtreme (settings answered at its menu)",
+            duration_seconds=int(config.get("duration", 0)) * 60,
+            leave_open=True,
+            creation_flags=self._new_console_flags(),
+        )
 
 
 class LinpackExtended(_Linpack):
@@ -320,7 +269,163 @@ class LinpackExtended(_Linpack):
     intel_only = True
 
     quick_start = {
-        "preset": "4 GB",
-        "values": {"duration": 30, "residual_check": True},
-        "note": "30 minutes with residual checks on. Intel only.",
+        "preset": "11 GB",
+        # KMP_AFFINITY blank on purpose. linpack.js only overrides the child's
+        # environment when it is set -- and when it does, it replaces the
+        # environment rather than adding to it, so the thread count never
+        # arrives and the default placement gives one thread per physical
+        # core: 8 of 16 on this kind of part, half the load the tab asked for.
+        # Left blank, the binary inherits the environment below and the
+        # Threads field means something again. It is also this package's own
+        # documented answer to an OMP error at startup.
+        "values": {"duration": 30, "residual_check": True, "affinity": "",
+                   "alignment": 1},
+        "note": "Problem size 38736 for 30 minutes, residual checks on, "
+                "alignment 1. Intel only.",
     }
+
+    def build(self, config, root):
+        """Run the package the way the package runs itself.
+
+        Linpack Extended is a Node driver around the same Intel binary, and it
+        is worth using rather than going around: it writes the input file,
+        chains tests, keeps Min/Avg/Max GFlops per problem size, and stops on
+        a bad solve or a residual that moved -- printing "FAIL - severe
+        instability detected" or "RESIDUAL MISMATCH - instability detected",
+        which are already the patterns in errors.LINPACK.
+
+        Its settings live in config.json at the root of the package, and the
+        path is hard-coded in linpack.js, so that file is where the settings
+        have to go. The one that shipped is copied aside the first time rather
+        than being written over and lost.
+        """
+        exe = self.locate(root)
+        if not exe:
+            raise ToolUnavailable(
+                self.name + "'s binary was not found. Expected its folder "
+                "beside this program."
+            )
+        blocked = self.unsupported_reason(root)
+        if blocked:
+            raise ToolUnavailable(blocked)
+
+        # .../dependencies/linpack/linpack_xeon64.exe
+        dependencies = os.path.dirname(os.path.dirname(exe))
+        package = os.path.dirname(dependencies)
+        node = os.path.join(dependencies, "node", "node.exe")
+        driver = os.path.join(dependencies, "linpack.js")
+        for needed, what in ((node, "node.exe"), (driver, "linpack.js")):
+            if not os.path.isfile(needed):
+                raise ToolUnavailable(
+                    "Linpack Extended is incomplete: " + what + " is missing "
+                    "from its dependencies folder."
+                )
+
+        size = int(config.get("problem_size", 22528))
+        lda = int(config.get("leading_dimension", 0)) or leading_dimension(size)
+        if lda < size:
+            lda = leading_dimension(size)
+        alignment = int(config.get("alignment", 4))
+
+        # linpack.js moves to the next test when the minutes are up, and the
+        # runner is what ends the run. 0 here means "until stopped", so the
+        # test is given a length nothing will reach.
+        minutes = int(config.get("duration", 0)) or 100000
+
+        settings_path = os.path.join(package, "config.json")
+        original = settings_path + ".roch-original"
+        try:
+            if os.path.exists(settings_path) and not os.path.exists(original):
+                shutil.copyfile(settings_path, original)
+        except OSError:
+            pass
+
+        # linpack.js reads this as `config.settings.KMP_AFFINITY ?? ""`, so
+        # leaving the key out is the same as an empty one -- and it is what
+        # the configurations people actually pass around look like.
+        block = {
+            "reduce output below X problem size": 0,
+            "track stats below X problem size": 0,
+            "stop after residual mismatch":
+                bool(config.get("residual_check", True)),
+        }
+        affinity = str(config.get("affinity", "")).strip()
+        if affinity:
+            block["KMP_AFFINITY"] = affinity
+
+        self._write(settings_path, json.dumps({
+            "test order": [1],
+            "settings": block,
+            "tests": {
+                "1": {
+                    "minutes": minutes,
+                    "problem size": size,
+                    "leading dimension": lda,
+                    "alignment value": alignment,
+                },
+            },
+        }, indent=2) + chr(10))
+
+        work = settings.run_dir("linpack")
+        log = os.path.join(work, "linpack-extended-output.txt")
+        try:
+            if os.path.exists(log):
+                os.remove(log)
+        except OSError:
+            pass
+
+        env = dict(os.environ)
+        # What "Linpack Extended.bat" sets. node here is old enough that it
+        # refuses to start on a recent Windows build without it.
+        env["NODE_SKIP_PLATFORM_CHECK"] = "1"
+
+        # These reach the benchmark only while KMP_AFFINITY is blank, because
+        # that is the one case where linpack.js leaves the child's environment
+        # alone. Set anyway: harmless when they are ignored, and the whole
+        # point of the field when they are not.
+        threads = int(config.get("threads", hardware.logical_cores()))
+        env["OMP_NUM_THREADS"] = str(threads)
+        env["MKL_NUM_THREADS"] = str(threads)
+
+        memory_gb = 8.0 * lda * size / (1024 ** 3)
+        summary = ("Linpack Extended n=" + str(size) + " lda=" + str(lda)
+                   + ", {:.1f} GB, ".format(memory_gb) + str(threads)
+                   + " threads")
+        seconds = int(config.get("duration", 0)) * 60
+        complete = ["All tests successfully passed"]
+
+        if not bool(config.get("show_window", True)):
+            return LaunchSpec(
+                argv=[node, driver],
+                cwd=dependencies,
+                env=env,
+                console=True,
+                error_key=self.key,
+                summary=summary,
+                duration_seconds=seconds,
+                completion_patterns=complete,
+                creation_flags=self._no_window_flags(),
+            )
+
+        # cmd, as the package's own .bat uses -- but cmd has no tee, and the
+        # driver has no log option, so its output would either be on screen or
+        # readable and never both. node is already here, so node splits it.
+        tee = os.path.join(work, "tee.js")
+        self._write(tee, TEE_JS)
+        cmdline = (
+            'cmd /c ""' + node + '" "' + driver + '" 2>&1 | '
+            '"' + node + '" "' + tee + '" "' + log + '""'
+        )
+        return LaunchSpec(
+            argv=[node, driver],
+            cmdline=cmdline,
+            cwd=dependencies,
+            env=env,
+            console=False,
+            watch_files=[log],
+            error_key=self.key,
+            summary=summary,
+            duration_seconds=seconds,
+            completion_patterns=complete,
+            creation_flags=self._new_console_flags(),
+        )

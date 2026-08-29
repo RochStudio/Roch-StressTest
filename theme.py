@@ -54,19 +54,19 @@ STOP_HOVER_COLOR = ("#991B1B", "#7A2626")
 # Consolas throughout, for the same reason Roch Viewer uses it: these panels
 # are full of numbers that want to line up in a column.
 FONT_FAMILY = "Consolas"
-FONT_SIZE = 12
+FONT_SIZE = 11
 
 GLOBAL_FONT = (FONT_FAMILY, FONT_SIZE)
 COMPACT_FONT = (FONT_FAMILY, FONT_SIZE)
 COMPACT_BOLD = (FONT_FAMILY, FONT_SIZE, "bold")
 HEADER_FONT = (FONT_FAMILY, FONT_SIZE, "bold")
-TAB_FONT = (FONT_FAMILY, 13, "bold")
-TITLE_FONT = (FONT_FAMILY, 15, "bold")
-LOG_FONT = (FONT_FAMILY, 11)
-STATUS_FONT = (FONT_FAMILY, 13, "bold")
+TAB_FONT = (FONT_FAMILY, 11, "bold")
+TITLE_FONT = (FONT_FAMILY, 13, "bold")
+LOG_FONT = (FONT_FAMILY, 10)
+STATUS_FONT = (FONT_FAMILY, 11, "bold")
 
 # Row metrics, matched to Roch Viewer so a row is the same height in both.
-ROW_HEIGHT = 20
+ROW_HEIGHT = 18
 ROW_PADX = 4
 ROW_PADY = 0
 SECTION_GAP = 3

@@ -273,6 +273,31 @@ class Tool:
             self.apply_memory(config)
         return config
 
+    # Whether this tool gets a tab of its own. False for a tool that is
+    # configured in its own window rather than here -- a tab of settings that
+    # do not reach it would be a tab that lies.
+    has_tab = True
+
+    def locked_fields(self, preset_name):
+        """Field keys this preset does not let the user set.
+
+        A preset that is really the tool's own -- Prime95 derives its FFT
+        ranges from the cache sizes it finds, so they are not the same on two
+        different processors -- has no business offering an editable box whose
+        value is then thrown away.
+        """
+        return ()
+
+    def quick_actions(self, root):
+        """The Quick Start buttons for this tool, as (label, config) pairs.
+
+        One button running the default is the usual case. A tool overrides
+        this when its card is worth more than that -- y-cruncher has a menu
+        worth opening and a .bat or two beside it, and three buttons say that
+        better than one button and a tab does.
+        """
+        return [("Start", self.quick_config(root))]
+
     def quick_note(self):
         return self.quick_start.get("note", "")
 
@@ -294,9 +319,19 @@ class Tool:
         if errors_limit:
             parts.append("stop at " + str(errors_limit) + " error"
                          + ("s" if errors_limit != 1 else ""))
-        duration = int(config.get("duration", 0) or 0)
-        parts.append(str(duration) + " min" if duration else "no time limit")
+        parts.append(self.duration_note(config))
         return "  |  ".join(part for part in parts if part)
+
+    def duration_note(self, config):
+        """What the card should say about how this run ends.
+
+        Overridable because the limit does not always apply: a single
+        Cinebench render ends when the render ends and never consults it, and
+        printing "30 min" beside it promises a soak that is not going to
+        happen.
+        """
+        duration = int(config.get("duration", 0) or 0)
+        return str(duration) + " min" if duration else "no time limit"
 
     def build(self, config, root):
         """Turn configured values into a LaunchSpec. Implemented per tool."""

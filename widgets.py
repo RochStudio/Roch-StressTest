@@ -18,8 +18,8 @@ def section(parent, title):
     every caller wants the body, and handing back the wrapper just means
     every caller then reaches into it.
     """
-    wrapper = ctk.CTkFrame(parent, corner_radius=6, fg_color=theme.SECTION_COLOR)
-    wrapper.pack(fill="x", padx=6, pady=(0, 6))
+    wrapper = ctk.CTkFrame(parent, corner_radius=5, fg_color=theme.SECTION_COLOR)
+    wrapper.pack(fill="x", padx=4, pady=(0, 2))
 
     header = ctk.CTkLabel(
         wrapper,
@@ -28,13 +28,13 @@ def section(parent, title):
         text_color=theme.TEXT_COLOR,
         anchor="w",
     )
-    header.pack(fill="x", padx=10, pady=(6, 2))
+    header.pack(fill="x", padx=7, pady=(3, 1))
 
     rule = ctk.CTkFrame(wrapper, height=1, fg_color=theme.RULE_COLOR)
-    rule.pack(fill="x", padx=10, pady=(0, 6))
+    rule.pack(fill="x", padx=7, pady=(0, 3))
 
     body = ctk.CTkFrame(wrapper, fg_color="transparent")
-    body.pack(fill="x", padx=10, pady=(0, 8))
+    body.pack(fill="x", padx=7, pady=(0, 3))
     body.grid_columnconfigure(1, weight=1)
     return body
 
@@ -61,14 +61,14 @@ def hint(parent, text, row, column=1, span=2, wrap=520):
     widget = ctk.CTkLabel(
         parent,
         text=text,
-        font=(theme.FONT_FAMILY, 10),
+        font=(theme.FONT_FAMILY, 9),
         text_color=theme.SUBTITLE_COLOR,
         anchor="w",
         justify="left",
         wraplength=wrap,
     )
     widget.grid(row=row, column=column, columnspan=span, sticky="w",
-                pady=(0, 4))
+                pady=(0, 2))
     return widget
 
 
@@ -134,7 +134,7 @@ class FieldRow:
                 variable=self.variable,
                 values=field.choices or [""],
                 width=theme.FIELD_WIDTH + 60,
-                height=24,
+                height=20,
                 font=theme.COMPACT_FONT,
                 dropdown_font=theme.COMPACT_FONT,
                 fg_color=theme.TAB_UNSELECTED_COLOR,
@@ -189,6 +189,29 @@ class FieldRow:
         else:
             self.variable.set(str(value))
 
+    def set_enabled(self, enabled):
+        """Grey this row out, for a setting the tool is not free to choose.
+
+        Prime95's own torture presets work out their FFT range and memory
+        from the caches of the processor they find, so on one machine Large
+        FFTs starts at 957K and on the next it does not. Those boxes are not
+        ours to fill in under a preset like that: they are shown greyed, and
+        what Prime95 decides is what runs. An editable box whose value is
+        discarded is worse than no box at all.
+        """
+        state = "normal" if enabled else "disabled"
+        if self.field.kind == "multi":
+            for child in self.widget.winfo_children():
+                try:
+                    child.configure(state=state)
+                except Exception:
+                    pass
+        else:
+            try:
+                self.widget.configure(state=state)
+            except Exception:
+                pass
+
     def set_choices(self, choices, selected=None):
         if self.field.kind != "choice":
             return
@@ -212,7 +235,7 @@ def action_button(parent, text, command, kind="normal", width=110):
         text=text,
         command=command,
         width=width,
-        height=26,
+        height=24,
         corner_radius=6,
         font=theme.COMPACT_BOLD,
         fg_color=colours[0],
