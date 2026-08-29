@@ -23,6 +23,7 @@ import threading
 import time
 
 from core import errors
+from core import winui
 
 IDLE = "idle"
 RUNNING = "running"
@@ -30,6 +31,14 @@ PASSED = "passed"
 FAILED = "failed"
 STOPPED = "stopped"
 BROKEN = "broken"
+
+# 0xC0000005, an access violation. A windowed tool torn down mid-run often
+# ends this way -- Prime95 closing with eight workers and 28 GB in flight
+# does it every time -- and on its own the code says nothing about which
+# happened: a genuine fault or somebody shutting the window. What separates
+# them is whether the window went first, which is what _window_watch below is
+# for.
+STATUS_ACCESS_VIOLATION = 0xC0000005
 
 # 0xC000013A. Windows gives a console process this exit code when it is sent
 # Ctrl+C or Ctrl+Break, or when its console window is closed. It says nothing
@@ -124,6 +133,19 @@ class _FileTail:
             return data.decode(self.encoding, errors="replace").lstrip("﻿")
         except OSError:
             return ""
+
+
+def _exit_code(code):
+    """An exit code as both numbers, since one of them is always the clue.
+
+    Windows status codes are recognisable in hex and meaningless in the
+    signed decimal Python reports: 3221225477 is nothing, 0xC0000005 is an
+    access violation.
+    """
+    try:
+        return "code %d (0x%08X)" % (code, code & 0xFFFFFFFF)
+    except (TypeError, ValueError):
+        return "code " + str(code)
 
 
 def kill_tree(process):
@@ -268,6 +290,15 @@ class Runner:
             else None
         )
 
+        # Whether this tool ever showed a window, and whether that window
+        # went away while the process was still running. A window that
+        # vanishes first is somebody closing it; a process that dies with its
+        # window still up has crashed. Only the windowed tools are watched --
+        # a console tool has no window of ours to lose, and its own console
+        # closing is already answered by STATUS_CONTROL_C_EXIT.
+        had_window = False
+        window_closed_first = False
+
         # Linpack's failure is a column in a table rather than a phrase, so
         # its rows are tracked here: the first residual becomes the reference
         # every later trial is compared against.
@@ -378,6 +409,16 @@ class Runner:
                 outcome, note = STOPPED, "Stopped."
                 break
 
+            if not spec.console and not window_closed_first:
+                try:
+                    windows = winui.windows_of(self._process.pid)
+                except Exception:
+                    windows = []
+                if windows:
+                    had_window = True
+                elif had_window and self._process.poll() is None:
+                    window_closed_first = True
+
             code = self._process.poll()
             if code is not None:
                 # The last thing a tool writes is usually the thing worth
@@ -433,9 +474,28 @@ class Runner:
                         "The tool's console was closed or interrupted "
                         "(Ctrl+C). This is not a hardware failure, and the "
                         "test did not finish.")
+                # Checked before the plain non-zero case and after the
+                # clean one on purpose. A tool that finishes by itself also
+                # destroys its window on the way out, so a poll landing in
+                # that gap would otherwise turn a pass into "stopped". Only
+                # an exit that already looks wrong is reconsidered.
+                elif code != 0 and window_closed_first:
+                    # A bad exit code, but the window went before the
+                    # process did -- so this was somebody closing it. The exit code that follows -- an
+                    # access violation, more often than not, because the tool
+                    # is torn down in the middle of its work -- describes the
+                    # teardown and not the machine. Reporting it as a failure
+                    # is how a stress tester ends up blamed for finding an
+                    # instability nobody had.
+                    outcome, note = STOPPED, (
+                        "The tool's window was closed, so the test did not "
+                        "run to the end. It exited with "
+                        + _exit_code(code) + ", which is what Windows gives a "
+                        "program taken down that way and says nothing about "
+                        "the machine.")
                 elif code != 0:
                     outcome, note = FAILED, (
-                        "The tool exited with code " + str(code)
+                        "The tool exited with " + _exit_code(code)
                         + ", which usually means it crashed.")
                 elif finished and not saw_completion:
                     # A clean exit from a tool that announces its own
