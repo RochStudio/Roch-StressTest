@@ -82,6 +82,21 @@ class MemtestVulkan(Tool):
         Preset("Custom", {}, "Whatever is in the boxes below."),
     )
 
+    # The three lengths a GPU memory test is actually run for: long enough
+    # to catch a bad clock, long enough to trust, and left going. Anything
+    # else is a number in the box on the tab.
+    QUICK_LENGTHS = (("10 min", 10), ("30 min", 30), ("Infinite", 0))
+
+    def quick_actions(self, root):
+        """The default preset at each of the three lengths."""
+        base = self.quick_config(root)
+        return [(label, dict(base, duration=minutes))
+                for label, minutes in self.QUICK_LENGTHS]
+
+    def quick_summary(self, root):
+        return (self.quick_preset_name(root) + "  |  "
+                + " / ".join(label for label, _ in self.QUICK_LENGTHS))
+
     def build(self, config, root):
         exe = self.locate(root)
         if not exe:

@@ -105,7 +105,7 @@ What each tool runs from Quick Start, and what its tab opens on where it has one
 | Linpack Extended | 11 GB (problem size 38736), 30 min, residual checks on, alignment 1, KMP_AFFINITY blank (Intel only) |
 | OCCT | opens its window, no time limit |
 | Cinebench | one button per version installed, each opens it |
-| memtest Vulkan | first GPU, 15 min |
+| memtest Vulkan | first GPU, with 10 min / 30 min / Infinite buttons |
 | 3DMark 11 | opens its window, no time limit |
 
 TM5's cycle count lives inside the `.cfg`, so overriding it means writing a copy. That copy goes to `bin/Roch active.cfg`, with only the `Cycles=` line changed and every other byte identical. The stock profiles are never edited: a cycle count set here is a property of the run, not of the profile.
