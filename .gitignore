@@ -59,3 +59,9 @@ ram_test_pro_*/**/license.bin
 # The built EXE, copied up beside the tool folders as the README says to do.
 # dist/ is ignored already; this is the copy that actually gets run.
 /RochStressTest.exe
+
+# The two memory testers write their logs inside their own folders, and those
+# logs are what the runner reads. They are run output, not part of either
+# package, and the adapters clear them at the start of every run.
+ram_test_pro_*/**/logs/log.txt
+TestMem5/Log.txt

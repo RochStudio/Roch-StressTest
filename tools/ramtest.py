@@ -83,6 +83,15 @@ class RamTestPro(Tool):
         folder = os.path.dirname(exe)
         log = os.path.join(folder, "logs", "log.txt")
 
+        # The log itself is not committed -- it is a log -- and git does not
+        # keep empty directories, so a fresh clone has no logs folder at all.
+        # RAM Test Pro is not asked to cope with that: the errors this reads
+        # are the whole reason for watching it.
+        try:
+            os.makedirs(os.path.dirname(log), exist_ok=True)
+        except OSError:
+            pass
+
         try:
             if os.path.exists(log):
                 os.remove(log)
