@@ -55,3 +55,7 @@ LinpackXtreme*/results.txt
 # not be committed, and it was purged from history before this repository was
 # made public.
 ram_test_pro_*/**/license.bin
+
+# The built EXE, copied up beside the tool folders as the README says to do.
+# dist/ is ignored already; this is the copy that actually gets run.
+/RochStressTest.exe

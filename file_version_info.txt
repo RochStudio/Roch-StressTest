@@ -15,11 +15,11 @@ VSVersionInfo(
       StringTable('040904B0', [
         StringStruct('CompanyName', 'Roch Studio'),
         StringStruct('FileDescription', 'Roch StressTest'),
-        StringStruct('FileVersion', '1.0.0.0'),
+        StringStruct('FileVersion', '1.0.0'),
         StringStruct('InternalName', 'RochStressTest'),
         StringStruct('OriginalFilename', 'RochStressTest.exe'),
         StringStruct('ProductName', 'Roch StressTest'),
-        StringStruct('ProductVersion', '1.0.0.0'),
+        StringStruct('ProductVersion', '1.0.0'),
       ]),
     ]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])]),
