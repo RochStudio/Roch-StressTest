@@ -58,9 +58,6 @@ class Prime95(Tool):
 
     quick_start = {
         "values": {"duration": 0},
-        "note": "Opens Prime95 with its torture dialog up, so the test is the "
-                "one you pick. Failures are still read from results.txt, and "
-                "Stop ends it.",
     }
 
     def quick_actions(self, root):

@@ -541,7 +541,10 @@ class StressApp:
                 anchor="w", justify="left", wraplength=400,
             ).grid(row=0, column=0, columnspan=2, sticky="w")
 
-        note = blocked or (tool.quick_note() if available
+        # Only the two that say something the card cannot: why this tool
+        # will not run on this processor, and where to unpack one that was
+        # not found. What each tool does is the button and the line above it.
+        note = blocked or ("" if available
                            else self.root_path if not getattr(
                                tool, "has_tab", True) else "")
         if note:

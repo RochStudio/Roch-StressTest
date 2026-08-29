@@ -101,9 +101,6 @@ class Cinebench(Tool):
 
     quick_start = {
         "values": {"duration": 0},
-        "note": "One button per version installed. Each opens that Cinebench; "
-                "start the run in its window. The score it prints is kept in "
-                "the Log tab.",
     }
 
     @staticmethod

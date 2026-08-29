@@ -79,7 +79,6 @@ class TestMem5(Tool):
     quick_start = {
         "preset": "1usmus v3 @ 1usmus",
         "values": {"cycles": 25, "duration": 0},
-        "note": "25 cycles, no time limit -- it ends when the cycles do.",
     }
 
     # Ordered roughly by how hard they lean on the memory subsystem, so the

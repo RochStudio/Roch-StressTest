@@ -188,7 +188,7 @@ class Tool:
     fields = ()
     presets = ()
     # The one configuration this tool should run when nobody has chosen
-    # anything: {"preset": name, "values": {...}, "note": "..."}. It is what
+    # anything: {"preset": name, "values": {...}}. It is what
     # the Quick Start page launches and what the tool's own tab opens on, so
     # there is exactly one default per tool and both places agree on it.
     quick_start = {}
@@ -290,9 +290,6 @@ class Tool:
         better than one button and a tab does.
         """
         return [("Start", self.quick_config(root))]
-
-    def quick_note(self):
-        return self.quick_start.get("note", "")
 
     def quick_summary(self, root):
         """A one-line description of the default, with no side effects.

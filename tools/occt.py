@@ -52,8 +52,6 @@ class OCCT(Tool):
 
     quick_start = {
         "values": {"duration": 0},
-        "note": "Opens OCCT, where the test, its length and the error "
-                "counters all live. Its own logs go to Documents\\OCCT.",
     }
 
     def quick_actions(self, root):

@@ -72,7 +72,6 @@ class MemtestVulkan(Tool):
     quick_start = {
         "preset": "Standard",
         "values": {"duration": 15},
-        "note": "The first GPU, 15 minutes, memory sized automatically.",
     }
 
     presets = (

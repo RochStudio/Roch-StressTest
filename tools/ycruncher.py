@@ -99,8 +99,6 @@ class YCruncher(Tool):
     quick_start = {
         "values": {"algorithms": "VSTv3", "memory": 28 * 1024, "duration": 30,
                    "per_test": 0, "pause": True},
-        "note": "VT3 alone, 28 GB, 30 minutes. More memory than is normally "
-                "free, so Windows will page to reach it.",
     }
 
     def quick_summary(self, root):

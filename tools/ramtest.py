@@ -95,8 +95,6 @@ class RamTestPro(Tool):
         "preset": "DDR4_DDR5_universal",
         "values": {"memory": 28000, "auto_threads": True, "cycles": 1,
                    "max_errors": 1, "duration": 0},
-        "note": "28 GB, threads auto-detected, one cycle, stops on the first "
-                "error.",
     }
 
     _NOTES = {

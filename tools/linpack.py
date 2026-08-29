@@ -120,7 +120,6 @@ class _Linpack(Tool):
     quick_start = {
         "preset": "4 GB",
         "values": {"duration": 30},
-        "note": "4 GB problem, 30 minutes. Start here before the larger sizes.",
     }
 
     # The memory figures Linpack Xtreme's own menu offers, so a run started
@@ -210,8 +209,6 @@ class LinpackXtreme(_Linpack):
 
     quick_start = {
         "values": {"duration": 0},
-        "note": "Opens Linpack Xtreme at its menu, where it asks for memory, "
-                "trials and time. Stop ends it.",
     }
 
     def quick_actions(self, root):
@@ -280,8 +277,6 @@ class LinpackExtended(_Linpack):
         # documented answer to an OMP error at startup.
         "values": {"duration": 30, "residual_check": True, "affinity": "",
                    "alignment": 1},
-        "note": "Problem size 38736 for 30 minutes, residual checks on, "
-                "alignment 1. Intel only.",
     }
 
     def build(self, config, root):

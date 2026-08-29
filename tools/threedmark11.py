@@ -78,8 +78,6 @@ class ThreeDMark11(Tool):
 
     quick_start = {
         "values": {"duration": 0},
-        "note": "Opens 3DMark 11, so the preset and the loop are the ones you "
-                "set in its window. Stop ends it.",
     }
 
     def quick_actions(self, root):
