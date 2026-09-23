@@ -107,12 +107,18 @@ class ToolPanel:
         )
         header.pack(fill="x", padx=12, pady=(10, 8))
 
+        self.profile_row = None
+        self.command_preview = None
+
         self._build_unsupported_section(frame)
+        self._build_profile_section(frame)
+        self._build_extra_sections(frame)
         self._build_preset_section(frame)
         self._build_settings_section(frame)
-        self._build_detection_section(frame)
+        self._build_preview_section(frame)
 
         self.apply_quick_start()
+        self._update_command_preview()
 
     # -- construction ----------------------------------------------------
 
@@ -121,6 +127,168 @@ class ToolPanel:
         if hasattr(self.tool, "presets_for"):
             return self.tool.presets_for(self.app.root_path)
         return self.tool.presets
+
+    # -- profiles: config files the tool keeps, made and edited here ------
+
+    NEW_PROFILE = "New profile"
+
+    def _build_profile_section(self, parent):
+        """Pick a saved profile to edit, or save these settings as one.
+
+        Only for a tool that keeps its profiles as files -- y-cruncher's .bat
+        files, Linpack Extended's config.json copies -- each of which is also
+        a Quick Start button.
+        """
+        if not hasattr(self.tool, "profiles"):
+            return
+        from core.toolbase import Field
+
+        body = widgets.section(parent, "Profile")
+        field = Field("profile", "Profile", "choice", self.NEW_PROFILE,
+                      choices=self._profile_names())
+        self.profile_row = widgets.FieldRow(
+            body, field, 0, on_change=lambda _key: self._profile_picked()
+        )
+
+        widgets.label(body, "Save as", 1)
+        line = ctk.CTkFrame(body, fg_color="transparent")
+        line.grid(row=1, column=1, columnspan=2, sticky="w", padx=(8, 0),
+                  pady=1)
+        self.profile_name = ctk.StringVar(value="")
+        ctk.CTkEntry(
+            line, textvariable=self.profile_name, width=theme.FIELD_WIDTH + 60,
+            height=22, font=theme.COMPACT_FONT, fg_color=theme.BG_COLOR2,
+            border_color=theme.BORDER_COLOR, text_color=theme.TEXT_COLOR,
+            placeholder_text="name",
+        ).pack(side="left")
+        widgets.action_button(line, "Save", self._save_profile,
+                              width=70).pack(side="left", padx=(6, 0))
+        self.delete_button = widgets.action_button(
+            line, "Delete", self._delete_profile, width=70)
+        self.delete_button.pack(side="left", padx=(4, 0))
+        self.delete_button.configure(state="disabled")
+        widgets.hint(body, self.tool.profile_hint, 2)
+
+        # A one-line command fits under the name; a whole file gets a section
+        # of its own at the bottom, where it does not push the settings down.
+        if getattr(self.tool, "profile_preview_label", ""):
+            return
+        widgets.label(body, "Command line", 3)
+        self.command_preview = ctk.CTkLabel(
+            body, text="", font=theme.LOG_FONT, text_color=theme.TEXT_COLOR,
+            anchor="w", justify="left", wraplength=560,
+        )
+        self.command_preview.grid(row=3, column=1, columnspan=2, sticky="w",
+                                  padx=(8, 0), pady=1)
+
+    def _build_preview_section(self, parent):
+        title = getattr(self.tool, "profile_preview_label", "")
+        if not title:
+            return
+        body = widgets.section(parent, title)
+        self.command_preview = ctk.CTkLabel(
+            body, text="", font=theme.LOG_FONT, text_color=theme.TEXT_COLOR,
+            anchor="w", justify="left",
+        )
+        self.command_preview.grid(row=0, column=0, columnspan=3, sticky="w")
+
+    def _profile_names(self):
+        return [self.NEW_PROFILE] + [
+            name for name, _ in self.tool.profiles(self.app.root_path)]
+
+    def _profile_path(self, name):
+        for candidate, path in self.tool.profiles(self.app.root_path):
+            if candidate == name:
+                return path
+        return None
+
+    def _profile_picked(self):
+        name = self.profile_row.value()
+        path = self._profile_path(name)
+        self.delete_button.configure(state="normal" if path else "disabled")
+        if not path:
+            self.profile_name.set("")
+            return
+        self.profile_name.set(name)
+        try:
+            values = self.tool.profile_values(path)
+        except (OSError, ValueError) as error:
+            self.app.log("Could not read " + path + ": " + str(error))
+            return
+        self.load_values(values)
+
+    def load_values(self, values):
+        """Put a profile's values into the boxes."""
+        self._loading = True
+        try:
+            for key, value in values.items():
+                if key in self.rows:
+                    self.rows[key].set(value)
+        finally:
+            self._loading = False
+        self._update_command_preview()
+
+    def _refresh_profiles(self, selected):
+        names = self._profile_names()
+        self.profile_row.field.choices = names
+        self.profile_row.widget.configure(values=names)
+        self.profile_row.set(selected if selected in names
+                             else self.NEW_PROFILE)
+        self.delete_button.configure(
+            state="normal" if self._profile_path(self.profile_row.value())
+            else "disabled")
+        self.app.refresh_quick_tab()
+
+    def _save_profile(self):
+        from tkinter import messagebox
+
+        name = self.tool.clean_profile_name(self.profile_name.get())
+        if not name:
+            messagebox.showwarning(APP_NAME, "Give the profile a name first.")
+            return
+        existing = self._profile_path(name)
+        if existing and name != self.profile_row.value():
+            if not messagebox.askyesno(
+                    APP_NAME, os.path.basename(existing)
+                    + " already exists. Replace it?"):
+                return
+        try:
+            path = self.tool.save_profile(self.app.root_path, name,
+                                          self.config())
+        except Exception as error:
+            messagebox.showerror(APP_NAME, "Could not save the profile:\n"
+                                 + str(error))
+            return
+        self.profile_name.set(name)
+        self._refresh_profiles(name)
+        self.app.log("Saved " + self.tool.name + " profile " + path)
+
+    def _delete_profile(self):
+        from tkinter import messagebox
+
+        name = self.profile_row.value()
+        path = self._profile_path(name)
+        if not path or not messagebox.askyesno(
+                APP_NAME, "Delete " + os.path.basename(path) + "?"):
+            return
+        try:
+            os.remove(path)
+        except OSError as error:
+            messagebox.showerror(APP_NAME, "Could not delete it:\n"
+                                 + str(error))
+            return
+        self.profile_name.set("")
+        self._refresh_profiles(self.NEW_PROFILE)
+        self.app.log("Deleted " + self.tool.name + " profile " + path)
+
+    def _update_command_preview(self):
+        if self.command_preview is None:
+            return
+        self.command_preview.configure(
+            text=self.tool.profile_preview(self.config()))
+
+    def _build_extra_sections(self, parent):
+        """Sections a tool's tab needs that are not a list of fields."""
 
     def _build_preset_section(self, parent):
         from core.toolbase import Field
@@ -182,12 +350,6 @@ class ToolPanel:
             text_color=theme.WARN_COLOR, anchor="w", justify="left",
             wraplength=880,
         ).grid(row=0, column=0, columnspan=3, sticky="w")
-
-    def _build_detection_section(self, parent):
-        if not self.tool.detection_note:
-            return
-        body = widgets.section(parent, "Failure detection")
-        widgets.hint(body, self.tool.detection_note, 0, column=0, span=3)
 
     def _build_actions(self, parent):
         bar = ctk.CTkFrame(parent, fg_color=theme.SECTION_COLOR,
@@ -268,6 +430,7 @@ class ToolPanel:
             self._loading = False
 
     def _field_changed(self, key):
+        self._update_command_preview()
         if self._loading:
             return
         if key == "memory" and hasattr(self.tool, "apply_memory"):
@@ -292,12 +455,162 @@ class ToolPanel:
         return values
 
     def label(self):
+        if self.profile_row is not None \
+                and self.profile_row.value() != self.NEW_PROFILE:
+            return self.tool.name + " -- " + self.profile_row.value()
         if self.preset_row is None:
             return self.tool.name
         return self.tool.name + " -- " + self.preset_row.value()
 
     def start(self):
         self.app.start_single(self.tool, self.config(), self.label())
+
+
+class LinpackPanel(ToolPanel):
+    """Linpack Extended's tab: a chain of tests, then the settings block.
+
+    A config.json can hold any number of tests, run one after another, so
+    they are drawn here as rows rather than as fields. The order of the rows
+    is the order they run in.
+    """
+
+    COLUMNS = (("minutes", "Minutes"), ("problem size", "Problem size"),
+               ("leading dimension", "Leading dim"),
+               ("alignment value", "Alignment"))
+
+    def __init__(self, app, parent, tool):
+        self.test_rows = []
+        self.tests_frame = None
+        super().__init__(app, parent, tool)
+
+    def _build_extra_sections(self, parent):
+        body = widgets.section(parent, "Tests")
+        self.tests_frame = ctk.CTkFrame(body, fg_color="transparent")
+        self.tests_frame.grid(row=0, column=0, columnspan=3, sticky="w")
+
+        adder = ctk.CTkFrame(body, fg_color="transparent")
+        adder.grid(row=1, column=0, columnspan=3, sticky="w", pady=(4, 0))
+        widgets.label(adder, "Add a test sized for", 0)
+        self.add_gb = ctk.StringVar(value="11")
+        ctk.CTkEntry(
+            adder, textvariable=self.add_gb, width=50, height=22,
+            font=theme.COMPACT_FONT, fg_color=theme.BG_COLOR2,
+            border_color=theme.BORDER_COLOR, text_color=theme.TEXT_COLOR,
+        ).grid(row=0, column=1, padx=(8, 4))
+        widgets.label(adder, "GB", 0, column=2, colour=theme.SUBTITLE_COLOR)
+        widgets.action_button(adder, "Add test", self._add_test,
+                              width=80).grid(row=0, column=3, padx=(8, 0))
+        widgets.hint(body, "They run top to bottom. A leading dimension "
+                           "smaller than the problem size is replaced with "
+                           "Intel's recommended one.", 2, column=0, span=3)
+
+    def _render_tests(self, tests):
+        for child in self.tests_frame.winfo_children():
+            child.destroy()
+        self.test_rows = []
+        for column, (_key, title) in enumerate(self.COLUMNS, 1):
+            widgets.label(self.tests_frame, title, 0, column=column,
+                          colour=theme.SUBTITLE_COLOR, padx=(8, 0))
+        widgets.label(self.tests_frame, "Memory", 0, column=5,
+                      colour=theme.SUBTITLE_COLOR, padx=(8, 0))
+
+        for index, test in enumerate(tests, 1):
+            widgets.label(self.tests_frame, str(index), index, bold=True)
+            variables = {}
+            for column, (key, _title) in enumerate(self.COLUMNS, 1):
+                variable = ctk.StringVar(value=str(test.get(key, "")))
+                ctk.CTkEntry(
+                    self.tests_frame, textvariable=variable,
+                    width=theme.FIELD_WIDTH, height=22,
+                    font=theme.COMPACT_FONT, fg_color=theme.BG_COLOR2,
+                    border_color=theme.BORDER_COLOR,
+                    text_color=theme.TEXT_COLOR,
+                ).grid(row=index, column=column, padx=(8, 0), pady=1)
+                variables[key] = variable
+            memory = widgets.label(self.tests_frame, "", index, column=5,
+                                   colour=theme.SUBTITLE_COLOR, padx=(8, 0))
+            row = {"vars": variables, "memory": memory}
+            for variable in variables.values():
+                variable.trace_add(
+                    "write", lambda *_a, r=row: self._test_edited(r))
+            if index > 1:
+                widgets.action_button(
+                    self.tests_frame, "Up",
+                    lambda i=index - 1: self._move_test(i), width=40,
+                ).grid(row=index, column=6, padx=(8, 0))
+            widgets.action_button(
+                self.tests_frame, "Remove",
+                lambda i=index - 1: self._remove_test(i), width=60,
+            ).grid(row=index, column=7, padx=(4, 0))
+            self.test_rows.append(row)
+            self._show_memory(row)
+
+    def _read_test(self, row):
+        test = {}
+        for key, variable in row["vars"].items():
+            try:
+                test[key] = int(str(variable.get()).strip())
+            except ValueError:
+                test[key] = 0
+        return test
+
+    def _show_memory(self, row):
+        gigabytes = self.tool.test_memory_gb(
+            self.tool.clean_test(self._read_test(row)))
+        row["memory"].configure(text="{:.1f} GB".format(gigabytes))
+
+    def _test_edited(self, row):
+        self._show_memory(row)
+        self._update_command_preview()
+
+    def tests_values(self):
+        return [self._read_test(row) for row in self.test_rows]
+
+    def _set_tests(self, tests):
+        self._render_tests(tests)
+        self._update_command_preview()
+
+    def _add_test(self):
+        from tools.linpack import leading_dimension, problem_size_for
+
+        try:
+            gigabytes = float(self.add_gb.get())
+        except ValueError:
+            gigabytes = 11.0
+        size = problem_size_for(max(0.1, gigabytes) * 1024)
+        test = dict(self.tool.TEST_DEFAULTS, **{
+            "problem size": size, "leading dimension": leading_dimension(size)})
+        self._set_tests(self.tests_values() + [test])
+
+    def _remove_test(self, index):
+        tests = self.tests_values()
+        if len(tests) > 1:
+            del tests[index]
+            self._set_tests(tests)
+
+    def _move_test(self, index):
+        tests = self.tests_values()
+        tests[index - 1], tests[index] = tests[index], tests[index - 1]
+        self._set_tests(tests)
+
+    def load_values(self, values):
+        if "tests" in values:
+            self._render_tests(values["tests"] or [self.tool.TEST_DEFAULTS])
+        super().load_values(values)
+
+    def apply_quick_start(self):
+        """Open on the config Quick Start describes, picked in the list."""
+        name = self.tool.quick_profile_name(self.app.root_path)
+        if name and self.profile_row is not None:
+            self.profile_row.set(name)
+            self.profile_name.set(name)
+            self.delete_button.configure(state="normal")
+        self.load_values(self.tool.quick_config(self.app.root_path))
+
+    def config(self):
+        values = super().config()
+        values["tests"] = self.tests_values()
+        return values
 
 
 class StressApp:
@@ -436,7 +749,8 @@ class StressApp:
         self.tabview.pack(fill="both", expand=True, padx=2, pady=2)
 
         # First, because it is the answer to "I just want to run the thing".
-        self._build_quick_tab(self.tabview.add("Quick Start"))
+        self.quick_tab = self.tabview.add("Quick Start")
+        self._build_quick_tab(self.quick_tab)
 
         for tool in toolset.TOOLS:
             # A tool configured in its own window has nothing to put on a tab.
@@ -444,7 +758,9 @@ class StressApp:
                 continue
             tab = self.tabview.add(tool.name)
             if tool.available(self.root_path):
-                self.panels[tool.key] = ToolPanel(self, tab, tool)
+                panel = (LinpackPanel if hasattr(tool, "config_json")
+                         else ToolPanel)
+                self.panels[tool.key] = panel(self, tab, tool)
             else:
                 self._build_missing_panel(tab, tool)
 
@@ -487,6 +803,12 @@ class StressApp:
         for side, tools in zip(sides, toolset.quick_columns()):
             for tool in tools:
                 self._build_quick_card(side, tool)
+
+    def refresh_quick_tab(self):
+        """Redraw Quick Start, after a y-cruncher profile is saved or deleted."""
+        for child in self.quick_tab.winfo_children():
+            child.destroy()
+        self._build_quick_tab(self.quick_tab)
 
     @staticmethod
     def _auto_hide_scrollbar(frame):
@@ -575,7 +897,7 @@ class StressApp:
                            self.start_single(t, c, t.name + " -- " + n))
             button = widgets.action_button(
                 holder, label, command, kind="start",
-                width=110 if len(actions) == 1 else 96,
+                width=110 if len(actions) == 1 else 88,
             )
             button.pack(side="left", padx=(0, 4))
             if not available or blocked:

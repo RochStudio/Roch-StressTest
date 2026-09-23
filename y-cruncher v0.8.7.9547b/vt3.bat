@@ -1,1 +1,1 @@
-y-cruncher.exe pause:1 stress -M:29GB -D:60 -TL:1800 VT3
+y-cruncher.exe pause:1 stress -TL:1800 VT3

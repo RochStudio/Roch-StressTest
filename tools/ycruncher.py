@@ -17,6 +17,7 @@ to run the lot.
 
 import glob
 import os
+import re
 
 from core import errors
 from core import settings
@@ -35,6 +36,27 @@ ALGORITHMS = (
     ("NTT63", "Classic 64-bit NTT"),
     ("VSTv3", "Vector-scalable transform"),
 )
+
+# Every spelling y-cruncher accepts, mapped to the name offered here, so a
+# hand-typed VT3 in a .bat is read back as the VSTv3 tick it means.
+ALGORITHM_NAMES = {name.upper(): name for name, _ in ALGORITHMS}
+ALGORITHM_NAMES.update({"VT3": "VSTv3", "VST": "VSTv3", "N63": "NTT63",
+                        "N64": "NTT63", "SFT": "SFTv4", "FFT": "FFTv4"})
+
+# Windows priority values from the manual's Startup Parameters section.
+PRIORITIES = {
+    "Below normal": -1,
+    "Normal": 0,
+    "Above normal": 1,
+    "High": 2,
+}
+
+# What y-cruncher runs at when a .bat says nothing about priority, so a
+# profile saved at this priority does not need to say it either.
+NATIVE_PRIORITY = "Below normal"
+
+# Characters Windows will not have in a file name.
+_BAD_NAME = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 
 
 # How much longer than its own -TL y-cruncher is given before the runner
@@ -55,12 +77,12 @@ class YCruncher(Tool):
     )
     exe_globs = ("y-cruncher*/y-cruncher.exe", "y-cruncher.exe")
     console = True
-    detection_note = (
-        "Shown in its own window, failures are read from y-cruncher's log "
-        "file, which carries the same text it prints; hidden, they are read "
-        "straight off the process. Either way a failed comparison stops the "
-        "run within a couple of seconds of y-cruncher printing it."
-    )
+    # No detection note: the tab is a profile editor and is kept to the
+    # profile and its settings. For the record, shown in its
+    # own window failures are read from y-cruncher's log file, which carries
+    # the same text it prints; hidden, they are read straight off the
+    # process. Either way a failed comparison stops the run within a couple
+    # of seconds of y-cruncher printing it.
 
     fields = (
         Field("algorithms", "Algorithms", "multi", "VSTv3",
@@ -68,69 +90,178 @@ class YCruncher(Tool):
               hint="Tick as many as you want; they run one after another. "
                    "None ticked runs all of them, which is y-cruncher's own "
                    "default."),
-        Field("memory", "Memory to use", "int", 0, minimum=0, maximum=1048576,
-              unit="MB", hint="0 leaves y-cruncher's own default in place."),
+        Field("memory", "Memory to use", "int", 0, minimum=0, maximum=1024,
+              unit="GB", hint="-M. 0 leaves it out and y-cruncher picks."),
         Field("per_test", "Seconds per test", "int", 60, minimum=0,
               maximum=86400, unit="s",
-              hint="How long each algorithm runs before the next. 0 omits -D "
-                   "and leaves y-cruncher's own default."),
-        Field("show_window", "Show y-cruncher's window", "bool", True,
-              hint="Runs it in its own console so you can watch it. Failures "
-                   "are then read from its log file, which carries exactly "
-                   "the same text."),
-        Field("pause", "Pause at the end", "bool", False,
-              hint="y-cruncher's pause:1. It leaves the finished result on "
-                   "screen if the window is shown, and changes nothing if it "
-                   "is not -- either way the process still exits."),
+              hint="-D. How long each algorithm runs before the next. 0 "
+                   "leaves it out and y-cruncher picks."),
         Field("duration", "Stop after", "int", 60, minimum=0, maximum=100000,
               unit="min",
-              hint="Passed to y-cruncher as -TL, which it checks between "
-                   "tests -- so it stops at the first test boundary at or "
-                   "after this, not on the dot. The countdown shown while it "
-                   "runs allows five minutes past it before stepping in. "
-                   "0 runs until you press Stop."),
+              hint="-TL, in seconds on the command line. y-cruncher checks "
+                   "it between tests, so it stops at the first test boundary "
+                   "at or after this; the countdown allows five minutes past "
+                   "it before stepping in. 0 runs until you press Stop."),
+        Field("pause", "Pause at the end", "bool", False,
+              hint="pause:1. Keeps the finished result on screen."),
         Field("priority", "Process priority", "choice", "Normal",
-              choices=["Below normal", "Normal", "Above normal", "High"],
-              hint="y-cruncher defaults to below normal, which shares the "
-                   "machine but under-stresses it."),
+              choices=list(PRIORITIES),
+              hint="priority:. y-cruncher runs at below normal when a "
+                   "profile does not say, which shares the machine but "
+                   "under-stresses it."),
+        Field("extra", "Other options", "text", "",
+              hint="Anything else to pass, exactly as y-cruncher takes it. "
+                   "Options before 'stress' in a .bat that this tab has no "
+                   "box for are kept here too."),
+        Field("show_window", "Show y-cruncher's window", "bool", True,
+              hint="Only for Start on this tab; a saved .bat always shows "
+                   "it. Failures are read from its log file either way."),
     )
 
     # What the Quick Start page runs, and what this tab opens on.
     quick_start = {
-        "values": {"algorithms": "VSTv3", "memory": 28 * 1024, "duration": 30,
+        "values": {"algorithms": "VSTv3", "memory": 28, "duration": 30,
                    "per_test": 0, "pause": True},
     }
 
-    def quick_summary(self, root):
-        """Named by what is ticked, since there is no preset to name."""
-        config = self.quick_config(root)
-        chosen = str(config.get("algorithms", "")).split()
-        parts = [" ".join(chosen) if chosen else "all algorithms"]
-        if int(config.get("memory", 0) or 0):
-            parts.append(self._memory_argument(int(config["memory"]))[3:])
-        minutes = int(config.get("duration", 0) or 0)
-        parts.append(str(minutes) + " min" if minutes else "no time limit")
-        return "  |  ".join(parts)
+    @staticmethod
+    def _memory_argument(gigabytes):
+        return "-M:" + str(gigabytes) + "GB"
 
-    # Windows priority values from the manual's Startup Parameters section.
-    _PRIORITY = {
-        "Below normal": -1,
-        "Normal": 0,
-        "Above normal": 1,
-        "High": 2,
-    }
+    # -- profiles: the .bat files beside y-cruncher.exe ------------------
+
+    def profiles(self, root):
+        """(name, path) for each .bat beside y-cruncher.exe."""
+        return [(os.path.splitext(os.path.basename(path))[0], path)
+                for path in self.bat_files(root)]
 
     @staticmethod
-    def _memory_argument(megabytes):
-        """-M in whole gigabytes when it divides evenly, megabytes otherwise.
+    def profile_arguments(config):
+        """The y-cruncher arguments these settings make, as a .bat holds them.
 
-        Cosmetic, and worth it: the command line is written to the log, and
-        "-M:28GB" is the figure somebody typed, while "-M:28672M" is the same
-        number after arithmetic they now have to redo to check it.
+        Everything before "stress" is a startup parameter and everything
+        after it belongs to the stress test, per the manual. Nothing is
+        written that y-cruncher would do anyway, so a profile says only what
+        was chosen.
         """
-        if megabytes % 1024 == 0:
-            return "-M:" + str(megabytes // 1024) + "GB"
-        return "-M:" + str(megabytes) + "M"
+        startup = []
+        if config.get("pause"):
+            startup.append("pause:1")
+        priority = config.get("priority", NATIVE_PRIORITY)
+        if priority in PRIORITIES and priority != NATIVE_PRIORITY:
+            startup.append("priority:" + str(PRIORITIES[priority]))
+
+        test = []
+        memory = int(config.get("memory", 0) or 0)
+        if memory > 0:
+            test.append(YCruncher._memory_argument(memory))
+        per_test = int(config.get("per_test", 0) or 0)
+        if per_test > 0:
+            test.append("-D:" + str(per_test))
+        minutes = int(config.get("duration", 0) or 0)
+        if minutes > 0:
+            test.append("-TL:" + str(minutes * 60))
+
+        # Extras go on whichever side of "stress" they are shaped for: a
+        # startup parameter is "name:value" with no leading dash.
+        for token in str(config.get("extra", "")).split():
+            if token.startswith("-") or ":" not in token:
+                test.append(token)
+            else:
+                startup.append(token)
+
+        chosen = str(config.get("algorithms", "")).replace(",", " ").split()
+        selected = []
+        for token in chosen:
+            canonical = ALGORITHM_NAMES.get(token.upper())
+            if canonical and canonical not in selected:
+                selected.append(canonical)
+        return startup + ["stress"] + test + selected
+
+    profile_hint = ("Saved as <name>.bat beside y-cruncher.exe, and shown as "
+                    "a button on Quick Start.")
+
+    def profile_preview(self, config):
+        return " ".join(["y-cruncher.exe"] + self.profile_arguments(config))
+
+    @staticmethod
+    def _gigabytes(text):
+        """-M's value in whole gigabytes, or None when it cannot be read."""
+        match = re.fullmatch(r"(\d+(?:\.\d+)?)([KMGT]?)(?:I?B)?", text.upper())
+        if not match:
+            return None
+        scale = {"": 1024 ** -3, "K": 1024 ** -2, "M": 1024 ** -1,
+                 "G": 1, "T": 1024}[match.group(2)]
+        return max(1, round(float(match.group(1)) * scale))
+
+    @classmethod
+    def profile_values(cls, path):
+        """A .bat read back into this tab's settings.
+
+        Anything the tab has no box for is kept in "Other options" rather
+        than dropped, so opening a profile and saving it again never loses
+        part of it.
+        """
+        values = {"algorithms": "", "memory": 0, "per_test": 0,
+                  "duration": 0, "pause": False,
+                  "priority": NATIVE_PRIORITY, "extra": ""}
+        extra, selected = [], []
+        for token in cls._bat_arguments(path):
+            lower = token.lower()
+            name, _, value = token.partition(":")
+            if lower == "stress":
+                continue
+            if lower.startswith("pause:"):
+                values["pause"] = value.strip() == "1"
+                if value.strip() not in ("1", "-2"):
+                    extra.append(token)
+                continue
+            if lower.startswith("priority:"):
+                for label, number in PRIORITIES.items():
+                    if value.strip() == str(number):
+                        values["priority"] = label
+                        break
+                else:
+                    extra.append(token)
+                continue
+            if name.upper() in ("-M", "-D", "-TL"):
+                number = (cls._gigabytes(value) if name.upper() == "-M"
+                          else int(value) if value.isdigit() else None)
+                if number is None:
+                    extra.append(token)
+                elif name.upper() == "-M":
+                    values["memory"] = number
+                elif name.upper() == "-D":
+                    values["per_test"] = number
+                else:
+                    values["duration"] = max(1, round(number / 60))
+                continue
+            canonical = ALGORITHM_NAMES.get(token.upper())
+            if canonical:
+                if canonical not in selected:
+                    selected.append(canonical)
+                continue
+            extra.append(token)
+        values["algorithms"] = " ".join(selected)
+        values["extra"] = " ".join(extra)
+        return values
+
+    @staticmethod
+    def clean_profile_name(name):
+        """A profile name that is safe to use as a file name, or ""."""
+        return _BAD_NAME.sub("", str(name)).strip().strip(".")
+
+    def save_profile(self, root, name, config):
+        """Write the settings as <name>.bat beside y-cruncher.exe."""
+        exe = self.locate(root)
+        name = self.clean_profile_name(name)
+        if not exe or not name:
+            raise ToolUnavailable("A profile needs a name and y-cruncher.")
+        path = os.path.join(os.path.dirname(exe), name + ".bat")
+        line = " ".join(["y-cruncher.exe"] + self.profile_arguments(config))
+        with open(path, "w", newline="\r\n") as handle:
+            handle.write(line + "\n")
+        return path
 
     def bat_files(self, root):
         """Every .bat sitting beside y-cruncher.exe, sorted by name.
@@ -275,51 +406,28 @@ class YCruncher(Tool):
                 creation_flags=self._new_console_flags(),
             )
 
-        # Startup parameters come before the option, per the manual.
+        # Exactly the command line a profile saved from this tab would hold,
+        # so Start and the .bat it saves always run the same test. Added to
+        # it, before "stress" where startup parameters belong:
         #
         # skip-warnings is the one that is not optional: without it y-cruncher
         # waits at a startup prompt for ENTER that nobody is there to press.
         #
-        # pause is the user's choice and safe either way. pause:1 prints
-        # "Press any key to continue" and then exits immediately regardless,
-        # because the child's input is closed; measured at 6.3s against 6.4s
+        # pause:-2 when pause is off, so y-cruncher does not wait on its own
+        # default; pause:1 is safe either way, because it exits immediately
+        # once the child's input is closed -- measured at 6.3s against 6.4s
         # for pause:-2 on an identical run.
-        argv = [
-            exe,
-            "skip-warnings",
-            "pause:1" if config.get("pause") else "pause:-2",
-            f"priority:{self._PRIORITY.get(config.get('priority'), 0)}",
-            f"logfile:{logfile}",
-            "stress",
-        ]
+        arguments = self.profile_arguments(config)
+        added = ["skip-warnings", "logfile:" + logfile]
+        if not config.get("pause"):
+            added.insert(0, "pause:-2")
+        cut = arguments.index("stress")
+        argv = [exe] + arguments[:cut] + added + arguments[cut:]
 
-        memory = int(config.get("memory", 0))
-        if memory > 0:
-            argv.append(self._memory_argument(memory))
-
-        # 0 omits -D entirely. That is not the same as a short one: -TL is
-        # only checked between tests, so with no -D the run stops at the
-        # first test boundary at or after the limit rather than on it. The
-        # runner's own clock is what bounds the overshoot.
-        per_test = int(config.get("per_test", 0))
-        if per_test > 0:
-            argv.append(f"-D:{per_test}")
-
-        duration_seconds = int(config.get("duration", 0)) * 60
-        if duration_seconds > 0:
-            argv.append(f"-TL:{duration_seconds}")
-
-        chosen = str(config.get("algorithms", "")).replace(",", " ").split()
-        valid = {name.upper(): name for name, _ in ALGORITHMS}
-        # Aliases the manual still documents, so a hand-typed VT3 works.
-        valid.update({"VT3": "VSTv3", "N63": "NTT63", "N64": "NTT63",
-                      "VST": "VSTv3"})
-        selected = []
-        for token in chosen:
-            canonical = valid.get(token.upper())
-            if canonical and canonical not in selected:
-                selected.append(canonical)
-        argv.extend(selected)
+        memory = int(config.get("memory", 0) or 0)
+        per_test = int(config.get("per_test", 0) or 0)
+        duration_seconds = int(config.get("duration", 0) or 0) * 60
+        selected = [a for a in arguments[cut:] if a in dict(ALGORITHMS)]
 
         try:
             if os.path.exists(logfile):
@@ -342,7 +450,7 @@ class YCruncher(Tool):
             error_key=self.key,
             summary=(
                 f"y-cruncher {' '.join(selected) if selected else 'all tests'}"
-                f", {self._memory_argument(memory)[3:] if memory else 'default memory'}"
+                f", {str(memory) + ' GB' if memory else 'default memory'}"
                 + (f", {per_test}s per test" if per_test > 0
                    else ", default test length")
             ),

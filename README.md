@@ -46,6 +46,17 @@ Or build a standalone EXE with `BUILD_EXE.bat` and copy `dist\RochStressTest.exe
 
 Administrator rights are asked for once at launch. TestMem5 and RAM Test Pro need them to lock physical pages, Prime95 to set affinity. Asking once beats a tool failing three hours into a run for want of a privilege.
 
+### Getting Cinebench and OCCT
+
+Every other tool ships in this repository. These two cannot: they are too large for GitHub (`OCCT.exe` alone is 218 MB, over its 100 MB file limit) and they are someone else's software to hand out. Download them from their makers and the program finds them on its next start.
+
+| Tool | Download | Where it goes |
+|---|---|---|
+| **Cinebench** | [maxon.net — Cinebench downloads](https://www.maxon.net/en/downloads/cinebench-downloads) | Install it (found under `C:\Program Files\Maxon`), or unpack it beside this program as `Cinebench 2026\`. Older versions work the same way — a folder named like `CINEBENCH R23\` beside the program gets its own button. |
+| **OCCT** | [ocbase.com — download](https://www.ocbase.com/download) | Put `OCCT.exe` in an `OCCT\` folder beside this program, or install it to `C:\Program Files\OCCT`. |
+
+Both folders are in `.gitignore`, so a copy dropped in is never committed. Copies kept inside BenchMate's app folder are deliberately not used: run outside BenchMate they cannot find their own text, and Cinebench 2024 comes up reading "StrNotFound".
+
 ## What each tool does
 
 **Quick Start** is the front page and, for half the tools, the only page: two columns of cards, one per tool. One test runs at a time.
@@ -55,17 +66,19 @@ A tool gets a tab of its own only when this program has settings worth offering.
 | Tool | Presets | Driven by |
 |---|---|---|
 | **Prime95** | none -- chosen in Prime95's own dialog | `prime95 -W<dir>`, with no `-t`, so it opens its torture dialog and waits |
-| **y-cruncher** | no presets — all eight algorithms as tick boxes, plus a button per `.bat` beside it | `y-cruncher … stress -M -D -TL <algorithms>` |
+| **y-cruncher** | profiles — each a `.bat` beside it, made and edited on the tab, with a button apiece | `y-cruncher … stress -M -D -TL <algorithms>` |
 | **TestMem5** | none -- the profile is picked in TM5's own window | opens `TM5.exe` with no arguments |
 | **RAM Test Pro** | none -- set in its own window | opens `RAM Test Pro.exe` |
 | **Linpack Xtreme** | none -- answered at its own menu | opens `LinpackXtreme_x64.exe` |
-| **Linpack Extended** | 2 / 4 / 6 / 8 / 11 / 14 / 30 GB, Intel CPUs only | its own Node driver, in cmd: `config.json` written from the fields, then `node linpack.js` |
+| **Linpack Extended** | configs — Default (the package's own) and 11GB, plus any made on the tab; Intel CPUs only | its own Node driver, in cmd: the chosen config written to `config.json`, then `node linpack.js` |
 | **OCCT** | none -- chosen in OCCT's own window | opens `OCCT.exe` |
 | **Cinebench** | none -- one button per version installed (R11.5 through R26) | opens that version's executable |
 | **memtest Vulkan** | first GPU / second GPU | the device index as a bare argument |
 | **3DMark 11** | none -- chosen in 3DMark's own window | opens `bin\x64\3DMark11.exe` |
 
-y-cruncher has no presets: its algorithms are not alternatives, so all eight are tick boxes and any combination runs. Ticking none runs the lot, which is y-cruncher's own convention. Its card also carries a button for every `.bat` sitting beside `y-cruncher.exe`, read from the folder rather than listed here — drop one in and it gets a button, named after the file. Those run exactly what the file says, with `logfile:` and `skip-warnings` added and nothing taken away.
+y-cruncher's tab is a profile editor. Its algorithms are not alternatives, so all eight are tick boxes and any combination runs — ticking none runs the lot, which is y-cruncher's own convention — and memory, seconds per test, time limit, pause and priority sit beside them, with the command line they make shown as you go. Save writes it as `<name>.bat` beside `y-cruncher.exe`; picking a saved one loads it back, and anything the tab has no box for is kept under "Other options" rather than dropped. Every `.bat` in that folder gets a Quick Start button named after the file, so one dropped in by hand works too. Those run exactly what the file says, with `logfile:` and `skip-warnings` added and nothing taken away.
+
+Linpack Extended's tab does the same for its `config.json`: a chain of tests (minutes, problem size, leading dimension, alignment, run top to bottom) and the settings block, saved as `<name>.json` in `Linpack-Extended-master/profiles`. `Default.json` is the package's own config, unchanged; `11GB.json` is one 30-minute test at problem size 38736. Each gets a Quick Start button.
 
 Cinebench gets a button per version installed, R11.5 through R26, each opening that version. It is looked for beside this program and under `Program Files\Maxon`. BenchMate's copies are deliberately *not* used: they are meant to be launched by BenchMate with its own environment, and run directly they cannot resolve their string resources -- Cinebench 2024 comes up titled `StrNotFound`, with a licence agreement whose Accept and Decline buttons are both labelled `StrNotFound` as well.
 
@@ -75,7 +88,7 @@ Memory figures are computed from what is actually free when you pick a preset, n
 
 ### Linpack Extended runs its own driver
 
-Both packages are front-ends around the same Intel binary, and both are now used rather than gone around. Linpack Xtreme's is a console menu that asks for memory, trials and time and picks the right build for the processor itself, so it is opened and answered there. Linpack Extended's is a Node script, and it is the thing its settings are documented against. The fields on the tab are written to `config.json` in the package, in that project's own format, and `node linpack.js` is started in a cmd window. The `config.json` that shipped is copied to `config.json.roch-original` the first time rather than being written over and lost.
+Both packages are front-ends around the same Intel binary, and both are now used rather than gone around. Linpack Xtreme's is a console menu that asks for memory, trials and time and picks the right build for the processor itself, so it is opened and answered there. Linpack Extended's is a Node script, and it is the thing its settings are documented against. The chosen config is written to `config.json` in the package, in that project's own format, and `node linpack.js` is started in a cmd window. The `config.json` that shipped is copied to `config.json.roch-original` the first time rather than being written over and lost.
 
 Using it means its failure detection rather than ours: it parses every result row itself and prints `FAIL - severe instability detected`, or `RESIDUAL MISMATCH - instability detected` when a residual moves between identical trials. It also chains tests and tracks Min/Avg/Max GFlops per problem size, which the raw binary does not.
 
@@ -102,7 +115,7 @@ What each tool runs from Quick Start, and what its tab opens on where it has one
 | TestMem5 | opens its window, no time limit |
 | RAM Test Pro | opens its window, no time limit |
 | Linpack Xtreme | opens its menu, no time limit |
-| Linpack Extended | 11 GB (problem size 38736), 30 min, residual checks on, alignment 1, KMP_AFFINITY blank (Intel only) |
+| Linpack Extended | a button per config: Default (the package's own), and 11GB — problem size 38736, 30 min, residual checks on, alignment 1, KMP_AFFINITY blank (Intel only) |
 | OCCT | opens its window, no time limit |
 | Cinebench | one button per version installed, each opens it |
 | memtest Vulkan | first GPU, with 10 min / 30 min / Infinite buttons |
@@ -171,3 +184,9 @@ Then, having finished its cycles, TM5 writes `Testing completed` and leaves its 
 ## Health and safety
 
 These tests exist to break things. Linpack in particular pulls more current than anything else here, and a 30 GB Linpack run on a marginal memory setting will fail a machine that has been "stable" for months. Watch temperatures, know the voltage limits for your memory before you start, and do not leave a first run unattended.
+
+---
+
+Created by **Roch Studio / [@MateoPCTech](https://x.com/MateoPCTech)**.
+
+[YouTube](https://www.youtube.com/@MateoPcTech) | [X](https://x.com/MateoPCTech) | [Discord](https://discord.gg/KfzExpKQHB)

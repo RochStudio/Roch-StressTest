@@ -1,0 +1,18 @@
+{
+  "test order": [
+    1
+  ],
+  "settings": {
+    "reduce output below X problem size": 0,
+    "track stats below X problem size": 0,
+    "stop after residual mismatch": true
+  },
+  "tests": {
+    "1": {
+      "minutes": 30,
+      "problem size": 38736,
+      "leading dimension": 38736,
+      "alignment value": 1
+    }
+  }
+}
