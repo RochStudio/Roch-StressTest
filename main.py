@@ -962,31 +962,26 @@ class StressApp:
         )
         self.detail_label.pack(side="left", padx=(0, 8), pady=4)
 
-        # The same three links as Roch CPU, GPU and Viewer. Packed first on
-        # the right so they hold the corner and the run clock sits beside
-        # them.
-        links = ctk.CTkFrame(strip, fg_color="transparent")
-        links.pack(side="right", padx=(4, 8), pady=4)
-        for index, (text, url) in enumerate(SOCIAL_LINKS):
-            if index:
-                ctk.CTkLabel(links, text="|", font=theme.COMPACT_FONT,
-                             text_color=theme.SUBTITLE_COLOR).pack(
-                                 side="left", padx=4)
-            link = ctk.CTkLabel(links, text=text, font=theme.COMPACT_FONT,
-                                text_color=theme.SUBTITLE_COLOR,
-                                cursor="hand2")
-            link.pack(side="left")
-            link.bind("<Button-1>", lambda _e, u=url: webbrowser.open(u))
-            link.bind("<Enter>", lambda _e, w=link: w.configure(
-                text_color=theme.TEXT_COLOR))
-            link.bind("<Leave>", lambda _e, w=link: w.configure(
-                text_color=theme.SUBTITLE_COLOR))
-
         self.clock_label = ctk.CTkLabel(
             strip, text="", font=theme.STATUS_FONT,
             text_color=theme.TEXT_COLOR, anchor="e",
         )
         self.clock_label.pack(side="right", padx=(4, 8), pady=4)
+
+        # The same three links as Roch CPU, GPU and Viewer, where Viewer has
+        # them: a line of their own in the bottom-left corner, in the accent
+        # red, with the separators in the text colour.
+        links = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        links.pack(anchor="w", fill="x", padx=12, pady=(2, 6))
+        for index, (text, url) in enumerate(SOCIAL_LINKS):
+            if index:
+                ctk.CTkLabel(links, text="|", font=theme.COMPACT_BOLD,
+                             text_color=theme.TEXT_COLOR).pack(
+                                 side="left", padx=6)
+            link = ctk.CTkLabel(links, text=text, font=theme.COMPACT_BOLD,
+                                text_color=theme.VALUE_COLOR, cursor="hand2")
+            link.pack(side="left")
+            link.bind("<Button-1>", lambda _e, u=url: webbrowser.open(u))
 
     # -- memory ----------------------------------------------------------
 
