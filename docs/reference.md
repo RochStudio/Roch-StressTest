@@ -180,7 +180,3 @@ Then, having finished its cycles, TM5 writes `Testing completed` and leaves its 
 - Settings, run artifacts and logs live in `%LOCALAPPDATA%\RochStressTest\`. The unpacked tool folders are left byte-identical to what was downloaded.
 - Closing the window stops whatever is running. There is never a stress test left going with no window to stop it.
 - The bundled tools are third-party and carry their own licences — see the readme in each folder. Roch StressTest itself is under `LICENSE`.
-
-## Health and safety
-
-These tests exist to break things. Linpack in particular pulls more current than anything else here, and a 30 GB Linpack run on a marginal memory setting will fail a machine that has been "stable" for months. Watch temperatures, know the voltage limits for your memory before you start, and do not leave a first run unattended.
