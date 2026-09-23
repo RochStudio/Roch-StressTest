@@ -33,6 +33,18 @@ from core.toolbase import Field, LaunchSpec, Tool, ToolUnavailable
 WORKING_NAME = "Roch active"
 WORKING_CFG = WORKING_NAME + ".cfg"
 
+# What TM5 opens on when nothing has been picked yet. TM5 remembers its
+# Testing settings in TM5.ini -- the profile as "Config File" (Universal 2
+# when missing) and "Test at least, minutes" as "Minutes", where its own
+# infinity button writes 0 (90 when missing). The defaults are set by seeding
+# the keys that are absent, never by overwriting a choice made in TM5's own
+# window.
+DEFAULT_PROFILE = "1usmus v3 @ 1usmus.cfg"
+DEFAULT_SETTINGS = (
+    ("Config File", DEFAULT_PROFILE),
+    ("Minutes", "0"),
+)
+
 
 class TestMem5(Tool):
     key = "testmem5"
@@ -83,6 +95,34 @@ class TestMem5(Tool):
         limit = int(self.quick_config(root).get("duration", 0) or 0)
         return str(limit) + " min" if limit else ""
 
+    @staticmethod
+    def _seed_defaults(folder):
+        """Add each of DEFAULT_SETTINGS that TM5.ini does not have yet."""
+        ini = os.path.join(folder, "TM5.ini")
+        try:
+            with open(ini, "r", errors="replace") as handle:
+                lines = handle.read().splitlines()
+        except OSError:
+            lines = []
+        present = {line.split("=", 1)[0].strip().lower()
+                   for line in lines if "=" in line}
+        missing = [(key, value) for key, value in DEFAULT_SETTINGS
+                   if key.lower() not in present]
+        if not os.path.exists(os.path.join(folder, "bin", DEFAULT_PROFILE)):
+            missing = [(k, v) for k, v in missing if k != "Config File"]
+        if not missing:
+            return
+        if not any(line.strip().lower() == "[settings]" for line in lines):
+            lines = ["[Settings]"] + lines
+        index = next(i for i, line in enumerate(lines)
+                     if line.strip().lower() == "[settings]")
+        lines[index + 1:index + 1] = [k + "=" + v for k, v in missing]
+        try:
+            with open(ini, "w", newline="\r\n") as handle:
+                handle.write("\n".join(lines) + "\n")
+        except OSError:
+            pass
+
     def build(self, config, root):
         exe = self.locate(root)
         if not exe:
@@ -102,6 +142,8 @@ class TestMem5(Tool):
                 os.remove(log)
         except OSError:
             pass
+
+        self._seed_defaults(folder)
 
         # No arguments at all. Given a Config File it starts that profile
         # immediately; given none it opens and waits, which is the point.
