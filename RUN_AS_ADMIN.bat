@@ -2,21 +2,20 @@
 setlocal
 cd /d "%~dp0"
 
-py -V:3.13 -m pip install -r requirements.txt
-if errorlevel 1 (
-    echo Dependency installation failed. Python 3.13 x64 is required.
-    pause
-    exit /b 1
+REM Builds the EXE the first time, then starts it. RochStressTest.exe raises
+REM its own UAC prompt, so there is no elevation to do here.
+REM
+REM When something needs explaining, run a debug build from a prompt instead
+REM -- it keeps a console for its diagnostics:
+REM
+REM     cargo run -- --no-elevate
+if not exist "%~dp0RochStressTest.exe" (
+    call "%~dp0BUILD_EXE.bat" nopause
+    if errorlevel 1 (
+        echo Build failed. Rust ^(cargo^) is required to build from source.
+        pause
+        exit /b 1
+    )
 )
-
-REM pyw rather than py: py is the console launcher, so Windows gives it a
-REM black console window that sits behind the app for the whole session.
-REM main.py raises its own UAC prompt, so there is no elevation to do here.
-REM
-REM Diagnostics are what this costs. pyw discards stdout and stderr, so a
-REM startup traceback goes nowhere. When something needs explaining, run it
-REM the loud way from a prompt:
-REM
-REM     py -V:3.13 main.py
-start "" pyw -V:3.13 main.py
+start "" "%~dp0RochStressTest.exe"
 exit /b 0

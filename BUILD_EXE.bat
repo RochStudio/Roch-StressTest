@@ -3,49 +3,41 @@ setlocal
 cd /d "%~dp0"
 set "NO_PAUSE=%~1"
 
-echo Building Roch StressTest with Python 3.13 x64
+echo Building Roch StressTest with Rust (cargo)
 echo.
 
-py -V:3.13 --version
+where cargo >nul 2>nul
 if errorlevel 1 (
     echo.
-    echo Python 3.13 x64 was not found. Install it, then try again.
+    echo cargo was not found. Install Rust from https://rustup.rs ^(the
+    echo x86_64-pc-windows-msvc toolchain, with the Visual Studio C++ build
+    echo tools it asks for^), then try again.
     if /i not "%NO_PAUSE%"=="nopause" pause
     exit /b 1
 )
 
+cargo --version
 echo.
-echo Installing required Python packages...
-py -V:3.13 -m pip install -r requirements.txt
+echo Building the release EXE...
+cargo build --release
+if errorlevel 1 goto fail
+
+if not exist "%~dp0target\release\RochStressTest.exe" goto missing
+
+REM The program looks for Prime95, y-cruncher and the rest beside itself, so
+REM the EXE is copied up next to the tool folders rather than left in target.
+copy /y "%~dp0target\release\RochStressTest.exe" "%~dp0RochStressTest.exe" >nul
 if errorlevel 1 goto fail
 
 echo.
-echo Cleaning old build folders...
-rmdir /s /q "%~dp0build" 2>nul
-rmdir /s /q "%~dp0dist" 2>nul
-
-echo.
-echo Building the GUI...
-py -V:3.13 -m PyInstaller --clean -y RochStressTest.spec
-if errorlevel 1 goto fail
-
-if not exist "%~dp0dist\RochStressTest.exe" goto missing
-
-echo.
-echo Done. The EXE is here:
-echo %~dp0dist\RochStressTest.exe
-echo.
-echo Copy it up one level, next to the tool folders, before running it --
-echo it looks for Prime95, y-cruncher and the rest beside itself.
-if /i not "%NO_PAUSE%"=="nopause" (
-    start "" "%~dp0dist"
-    pause
-)
+echo Done. The EXE is here, beside the tool folders:
+echo %~dp0RochStressTest.exe
+if /i not "%NO_PAUSE%"=="nopause" pause
 exit /b 0
 
 :missing
 echo.
-echo PyInstaller finished, but RochStressTest.exe was not found.
+echo cargo finished, but target\release\RochStressTest.exe was not found.
 goto fail
 
 :fail
