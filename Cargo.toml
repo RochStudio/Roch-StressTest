@@ -1,0 +1,52 @@
+[package]
+name = "roch-stresstest"
+version = "1.0.0"
+edition = "2021"
+description = "Roch StressTest - one window for every stress test on your PC"
+authors = ["Roch Studio"]
+license = "GPL-3.0-only"
+repository = "https://github.com/RochStudio/Roch-StressTest"
+build = "build.rs"
+# The tool folders beside the sources are third-party distributions, not part
+# of the crate.
+include = ["src/**", "build.rs", "Cargo.toml", "Cargo.lock", "icon.ico", "res/**", "LICENSE", "README.md"]
+
+[lib]
+name = "roch_stresstest"
+path = "src/lib.rs"
+
+[[bin]]
+name = "RochStressTest"
+path = "src/main.rs"
+
+[dependencies]
+eframe = { version = "0.33", default-features = false, features = ["default_fonts", "glow", "accesskit"] }
+fancy-regex = "0.14"
+serde_json = { version = "1", features = ["preserve_order"] }
+ico = "0.4"
+raw-window-handle = "0.6"
+
+[dependencies.windows]
+version = "0.61"
+features = [
+    "Win32_Foundation",
+    "Win32_Globalization",
+    "Win32_Security",
+    "Win32_System_Console",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Registry",
+    "Win32_System_SystemInformation",
+    "Win32_System_Threading",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_Diagnostics_Debug",
+]
+
+[build-dependencies]
+embed-resource = "3"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true

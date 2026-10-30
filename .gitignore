@@ -1,9 +1,5 @@
-__pycache__/
-*.py[cod]
-build/
-dist/
-.venv/
-venv/
+# Cargo's build output.
+/target/
 .idea/
 .vscode/
 *.log
@@ -56,8 +52,8 @@ LinpackXtreme*/results.txt
 # made public.
 ram_test_pro_*/**/license.bin
 
-# The built EXE, copied up beside the tool folders as the README says to do.
-# dist/ is ignored already; this is the copy that actually gets run.
+# The built EXE, copied beside the tool folders by BUILD_EXE.bat. target/ is
+# ignored already; this is the copy that actually gets run.
 /RochStressTest.exe
 
 # The two memory testers write their logs inside their own folders, and those
